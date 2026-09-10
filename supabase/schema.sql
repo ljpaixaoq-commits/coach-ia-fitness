@@ -28,11 +28,28 @@ CREATE TABLE IF NOT EXISTS profiles (
     daily_protein_target_g INTEGER DEFAULT 160,
     daily_carb_target_g INTEGER DEFAULT 200,
     daily_fat_target_g INTEGER DEFAULT 60,
+    cpf TEXT,
+    birth_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. TABELA DE TREINOS (Fichas / Planos de Treino)
+-- 2. TABELA DE CONTAS DE USUÁRIO (Login/Acesso - separada dos dados pessoais)
+CREATE TABLE IF NOT EXISTS user_accounts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID NOT NULL UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member', -- 'admin', 'member'
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    access_expires_at DATE,
+    access_days INTEGER,
+    last_login_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. TABELA DE TREINOS (Fichas / Planos de Treino)
 CREATE TABLE IF NOT EXISTS workouts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -283,6 +300,9 @@ ALTER TABLE evolution_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_coach_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_daily_summaries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_accounts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all read-write for user_accounts" ON user_accounts FOR ALL USING (true);
 
 CREATE POLICY "Allow public read-write for profiles" ON profiles FOR ALL USING (true);
 CREATE POLICY "Allow public read-write for workouts" ON workouts FOR ALL USING (true);
