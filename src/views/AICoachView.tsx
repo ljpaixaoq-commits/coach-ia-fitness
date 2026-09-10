@@ -352,14 +352,15 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {LIMITATIONS.map((lim) => {
-                const selected = limitations.includes(lim.id);
+                const isNone = lim.id === 'none';
+                const selected = isNone ? limitations.length === 0 : limitations.includes(lim.id);
                 return (
                   <button
                     key={lim.id}
                     onClick={() => toggleLimitation(lim.id)}
                     className={`p-3.5 rounded-2xl border text-left transition-all ${
                       selected
-                        ? lim.id === 'none'
+                        ? isNone
                           ? 'bg-emerald-500/15 border-emerald-500/40'
                           : 'bg-rose-500/15 border-rose-500/40'
                         : 'bg-dark-900 border-slate-800 hover:border-slate-700'
@@ -387,8 +388,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
               </button>
               <button
                 onClick={() => setCreateStep('details')}
-                disabled={limitations.length === 0}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors disabled:opacity-40"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors"
               >
                 Continuar <ChevronRight className="w-3.5 h-3.5" />
               </button>
