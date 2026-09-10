@@ -54,10 +54,10 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   const [editingVideoExId, setEditingVideoExId] = useState<string | null>(null);
   const [tempVideoUrl, setTempVideoUrl] = useState<string>('');
 
-  const getWorkoutTabLabel = (w: Workout) => {
-    const v = w.title.match(/Variação (\d+)/);
-    if (v) {
-      return `Aba ${String.fromCharCode(64 + parseInt(v[1], 10))}`;
+  const getWorkoutTabLabel = (w: Workout, index: number): string => {
+    if (w.ai_generated) {
+      const aiIndex = workouts.filter(k => k.ai_generated).findIndex(k => k.id === w.id);
+      return aiIndex >= 0 ? `Treino ${aiIndex + 1}` : `Treino ${index + 1}`;
     }
     return w.title.split(' - ')[0];
   };
@@ -132,7 +132,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
         {/* Workout Tabs / Fichas */}
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 max-w-full">
-          {workouts.map((w) => (
+          {workouts.map((w, wi) => (
             <button
               key={w.id}
               onClick={() => setSelectedWorkoutId(w.id)}
@@ -142,7 +142,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                   : 'bg-dark-850 hover:bg-dark-800 text-slate-300 border border-slate-800'
               }`}
             >
-              {getWorkoutTabLabel(w)}
+              {getWorkoutTabLabel(w, wi)}
             </button>
           ))}
         </div>
@@ -514,16 +514,13 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               )}
             </div>
 
-            {/* Instructions */}
-            <div className="p-4 rounded-xl bg-dark-850 border border-slate-800 space-y-1.5 text-xs text-slate-300">
-              <h4 className="font-bold text-white flex items-center space-x-1.5">
-                <Info className="w-4 h-4 text-blue-400" />
-                <span>Instruções de Postura & Execução:</span>
-              </h4>
-              <p className="leading-relaxed">
-                {activeVideoModal.demo_instructions || 'Mantenha a postura alinhada, respiração contínua e controle a fase excêntrica.'}
-              </p>
-            </div>
+            {/* Instruções rápidas */}
+            {activeVideoModal.demo_instructions && (
+              <div className="p-3 rounded-xl bg-dark-850 border border-slate-800 text-xs text-slate-300 flex items-start space-x-2">
+                <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">{activeVideoModal.demo_instructions}</p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               {activeVideoModal.video_url && (

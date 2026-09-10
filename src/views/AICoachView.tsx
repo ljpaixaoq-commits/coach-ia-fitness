@@ -592,7 +592,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
                         : 'bg-dark-900 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
-                    <span>Aba {String.fromCharCode(65 + wi)}</span>
+                    <span>Treino {wi + 1}</span>
                   </button>
                 ))}
               </div>
@@ -606,7 +606,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
                     <h3 className="text-sm font-bold text-white">{w.title}</h3>
                     {generatedWorkouts.length > 1 && (
                       <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-500/10 border border-blue-500/30 text-blue-300">
-                        Aba {String.fromCharCode(65 + selectedModel)}
+                        Treino {selectedModel + 1}
                       </span>
                     )}
                   </div>
