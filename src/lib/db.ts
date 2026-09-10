@@ -270,89 +270,104 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
 
 // ── Generic Upsert Helper ──────────────────────────────────────
 async function upsert(table: string, data: Record<string, any>) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return null;
   const { error } = await supabase.from(table).upsert(data, { onConflict: 'id' });
   if (error) console.error(`Upsert ${table}:`, error);
+  return error ?? null;
 }
 
 async function insert(table: string, data: Record<string, any> | Record<string, any>[]) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return null;
   const { error } = await supabase.from(table).insert(data);
   if (error) console.error(`Insert ${table}:`, error);
+  return error ?? null;
 }
 
 async function remove(table: string, id: string) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return null;
   const { error } = await supabase.from(table).delete().eq('id', id);
   if (error) console.error(`Delete ${table}:`, error);
+  return error ?? null;
 }
 
 // ── Profile Sync ───────────────────────────────────────────────
 export function syncProfile(p: Profile) {
-  upsert('profiles', p);
+  return upsert('perfis', p);
 }
 
 // ── Workout Sync ───────────────────────────────────────────────
 export function syncWorkout(w: Workout) {
-  const { exercises, ...data } = w;
-  upsert('workouts', { ...data, day_of_week: data.day_of_week || [] });
+  const { id, profile_id, title, subtitle, category, day_of_week, estimated_duration_min, difficulty, ai_generated, is_active, notes } = w;
+  return upsert('treinos', {
+    id, profile_id, title, subtitle, category,
+    day_of_week: day_of_week || [],
+    estimated_duration_min,
+    difficulty: difficulty || 'intermediary',
+    ai_generated: ai_generated ?? false,
+    is_active: is_active ?? true,
+    notes
+  });
 }
 
 export function syncWorkoutExercise(ex: WorkoutExercise) {
-  upsert('workout_exercises', ex);
+  const { id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index } = ex;
+  return upsert('treino_exercicios', {
+    id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds,
+    video_url, video_gif_url, demo_instructions, order_index
+  });
 }
 
 export function deleteWorkout(id: string) {
-  remove('workouts', id);
+  return remove('treinos', id);
 }
 
 export function deleteWorkouts(ids: string[]) {
-  ids.forEach((id) => remove('workouts', id));
+  return Promise.all(ids.map((id) => remove('treinos', id)));
 }
 
 // ── Meal Sync ──────────────────────────────────────────────────
 export function syncMeal(m: Meal) {
   const { items, ...data } = m;
-  upsert('meals', data);
+  upsert('refeicoes', data);
 }
 
 export function syncMealItem(item: MealItem) {
-  upsert('meal_items', item);
+  upsert('refeicao_itens', item);
 }
 
 // ── Water Sync ─────────────────────────────────────────────────
 export function syncWaterLog(log: WaterLog) {
-  insert('water_logs', { profile_id: log.profile_id, amount_ml: log.amount_ml, logged_at: log.logged_at });
+  insert('registro_agua', { profile_id: log.profile_id, amount_ml: log.amount_ml, logged_at: log.logged_at });
 }
 
 // ── Supplement Sync ────────────────────────────────────────────
 export function syncSupplement(s: Supplement) {
-  upsert('supplements', s);
+  upsert('suplementos', s);
 }
 
 // ── Health Metric Sync ─────────────────────────────────────────
 export function syncHealthMetric(h: HealthMetric) {
-  insert('health_metrics', h);
+  insert('metricas_saude', h);
 }
 
 // ── Injury Sync ────────────────────────────────────────────────
 export function syncInjury(i: InjuryPainLog) {
-  upsert('injury_pain_logs', i);
+  upsert('registro_lesoes', i);
 }
 
 // ── Photo Sync ─────────────────────────────────────────────────
 export function syncPhoto(p: EvolutionPhoto) {
-  insert('evolution_photos', p);
+  insert('fotos_evolucao', p);
 }
 
 // ── Goal Sync ──────────────────────────────────────────────────
 export function syncGoal(g: Goal) {
-  upsert('goals', g);
+  upsert('metas', g);
 }
 
 // ── AI Message Sync ────────────────────────────────────────────
 export function syncMessage(m: AICoachMessage) {
-  insert('ai_coach_messages', m);
+  insert('coach_mensagens', m);
 }
 
 // ── AUTH ───────────────────────────────────────────────────────

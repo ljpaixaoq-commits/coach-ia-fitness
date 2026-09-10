@@ -1,13 +1,14 @@
 -- ==============================================================================
 -- COACH IA PESSOAL - SCHEMA COMPLETO SUPABASE (POSTGRESQL)
 -- Nomenclatura das tabelas em português
+-- IDs são TEXT (o app gera IDs textuais como 'wkt-ai-...', 'ex-ai-...')
 -- ==============================================================================
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. PERFIS DE USUÁRIOS (Suporte a Família / Múltiplos Perfis)
 CREATE TABLE IF NOT EXISTS perfis (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     name TEXT NOT NULL,
     nickname TEXT,
     email TEXT,
@@ -37,8 +38,8 @@ CREATE TABLE IF NOT EXISTS perfis (
 
 -- 2. CONTAS DE USUÁRIO (Login/Acesso - separada dos dados pessoais)
 CREATE TABLE IF NOT EXISTS contas_usuario (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL UNIQUE REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'member', -- 'admin', 'member'
@@ -47,13 +48,14 @@ CREATE TABLE IF NOT EXISTS contas_usuario (
     access_days INTEGER,
     last_login_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_contas_usuario_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 3. TREINOS (Fichas / Planos de Treino)
 CREATE TABLE IF NOT EXISTS treinos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     title TEXT NOT NULL,
     subtitle TEXT,
     category TEXT NOT NULL, -- 'Push', 'Pull', 'Legs', 'Full Body', 'Cardio', 'Upper', 'Lower'
@@ -63,13 +65,14 @@ CREATE TABLE IF NOT EXISTS treinos (
     ai_generated BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_treinos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 4. EXERCÍCIOS DE CADA TREINO
 CREATE TABLE IF NOT EXISTS treino_exercicios (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    workout_id UUID NOT NULL REFERENCES treinos(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    workout_id TEXT NOT NULL,
     name TEXT NOT NULL,
     muscle_group TEXT NOT NULL,
     sets INTEGER NOT NULL DEFAULT 4,
@@ -80,14 +83,15 @@ CREATE TABLE IF NOT EXISTS treino_exercicios (
     video_url TEXT, -- link do vídeo de demonstração (YouTube ou próprio)
     demo_instructions TEXT,
     order_index INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_treino_exercicios_treino FOREIGN KEY (workout_id) REFERENCES treinos(id) ON DELETE CASCADE
 );
 
 -- 5. HISTÓRICO DE TREINOS REALIZADOS
 CREATE TABLE IF NOT EXISTS registro_treinos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
-    workout_id UUID REFERENCES treinos(id) ON DELETE SET NULL,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
+    workout_id TEXT,
     workout_title TEXT NOT NULL,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE,
@@ -97,26 +101,29 @@ CREATE TABLE IF NOT EXISTS registro_treinos (
     rpe_effort INTEGER CHECK (rpe_effort >= 1 AND rpe_effort <= 10),
     user_feedback TEXT,
     ai_feedback TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_registro_treinos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE,
+    CONSTRAINT fk_registro_treinos_treino FOREIGN KEY (workout_id) REFERENCES treinos(id) ON DELETE SET NULL
 );
 
 -- 6. SÉRIES DETALHADAS DO HISTÓRICO DE TREINO
 CREATE TABLE IF NOT EXISTS registro_treino_series (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    workout_log_id UUID NOT NULL REFERENCES registro_treinos(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    workout_log_id TEXT NOT NULL,
     exercise_name TEXT NOT NULL,
     set_number INTEGER NOT NULL,
     reps_completed INTEGER NOT NULL,
     weight_kg NUMERIC(6,2) NOT NULL,
     is_pr BOOLEAN DEFAULT FALSE,
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_registro_series_log FOREIGN KEY (workout_log_id) REFERENCES registro_treinos(id) ON DELETE CASCADE
 );
 
 -- 7. ALIMENTAÇÃO (Refeições Diárias)
 CREATE TABLE IF NOT EXISTS refeicoes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     meal_type TEXT NOT NULL, -- 'breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'
     title TEXT NOT NULL,
     consumed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -125,34 +132,37 @@ CREATE TABLE IF NOT EXISTS refeicoes (
     total_carbs_g NUMERIC(6,1) DEFAULT 0,
     total_fats_g NUMERIC(6,1) DEFAULT 0,
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_refeicoes_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 8. ITENS DE CADA REFEIÇÃO
 CREATE TABLE IF NOT EXISTS refeicao_itens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    meal_id UUID NOT NULL REFERENCES refeicoes(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    meal_id TEXT NOT NULL,
     food_name TEXT NOT NULL,
     portion_g NUMERIC(6,1) NOT NULL,
     calories INTEGER NOT NULL,
     protein_g NUMERIC(6,1) NOT NULL,
     carbs_g NUMERIC(6,1) NOT NULL,
     fats_g NUMERIC(6,1) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_refeicao_itens_refeicao FOREIGN KEY (meal_id) REFERENCES refeicoes(id) ON DELETE CASCADE
 );
 
 -- 9. INGESTÃO DE ÁGUA
 CREATE TABLE IF NOT EXISTS registro_agua (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     amount_ml INTEGER NOT NULL,
-    logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_registro_agua_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 10. SUPLEMENTOS & MISTURA PERSONALIZADA
 CREATE TABLE IF NOT EXISTS suplementos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     name TEXT NOT NULL,
     is_custom_blend BOOLEAN DEFAULT FALSE,
     dosage TEXT NOT NULL,
@@ -163,22 +173,25 @@ CREATE TABLE IF NOT EXISTS suplementos (
     unit TEXT DEFAULT 'doses',
     notes TEXT,
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_suplementos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 11. CONSUMO DE SUPLEMENTOS (HISTÓRICO)
 CREATE TABLE IF NOT EXISTS suplemento_consumos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
-    supplement_id UUID NOT NULL REFERENCES suplementos(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
+    supplement_id TEXT NOT NULL,
     taken_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    notes TEXT
+    notes TEXT,
+    CONSTRAINT fk_suplemento_consumos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE,
+    CONSTRAINT fk_suplemento_consumos_suplemento FOREIGN KEY (supplement_id) REFERENCES suplementos(id) ON DELETE CASCADE
 );
 
 -- 12. SAÚDE & MÉTRICAS CLÍNICAS
 CREATE TABLE IF NOT EXISTS metricas_saude (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     measured_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     weight_kg NUMERIC(5,2),
     bmi NUMERIC(4,1),
@@ -200,13 +213,14 @@ CREATE TABLE IF NOT EXISTS metricas_saude (
     right_thigh_cm NUMERIC(5,1),
     left_thigh_cm NUMERIC(5,1),
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_metricas_saude_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 13. LESÕES, DORES E HISTÓRICO CLÍNICO (Ex: Joelho Direito)
 CREATE TABLE IF NOT EXISTS registro_lesoes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     body_part TEXT NOT NULL,
     pain_level INTEGER NOT NULL CHECK (pain_level >= 0 AND pain_level <= 10),
     status TEXT DEFAULT 'monitoring',
@@ -215,26 +229,28 @@ CREATE TABLE IF NOT EXISTS registro_lesoes (
     restricted_exercises TEXT[],
     recommended_exercises TEXT[],
     treatment_notes TEXT,
-    logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_registro_lesoes_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 14. FOTOS DE EVOLUÇÃO FÍSICA
 CREATE TABLE IF NOT EXISTS fotos_evolucao (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     photo_type TEXT NOT NULL,
     photo_url TEXT NOT NULL,
     weight_kg NUMERIC(5,2),
     body_fat_pct NUMERIC(4,1),
     taken_at DATE NOT NULL DEFAULT CURRENT_DATE,
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_fotos_evolucao_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 15. METAS E HÁBITOS
 CREATE TABLE IF NOT EXISTS metas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     title TEXT NOT NULL,
     category TEXT NOT NULL,
     current_value NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -242,24 +258,26 @@ CREATE TABLE IF NOT EXISTS metas (
     unit TEXT NOT NULL,
     deadline DATE,
     status TEXT DEFAULT 'in_progress',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_metas_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 16. INTERAÇÕES COM O COACH IA (Chat & Recomendações)
 CREATE TABLE IF NOT EXISTS coach_mensagens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     sender TEXT NOT NULL,
     message TEXT NOT NULL,
     intent_type TEXT,
     suggested_actions JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_coach_mensagens_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- 17. RESUMOS INTELIGENTES DO DIA
 CREATE TABLE IF NOT EXISTS coach_resumos_diarios (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    profile_id TEXT NOT NULL,
     summary_date DATE NOT NULL DEFAULT CURRENT_DATE,
     greeting TEXT NOT NULL,
     sleep_summary TEXT,
@@ -271,7 +289,8 @@ CREATE TABLE IF NOT EXISTS coach_resumos_diarios (
     goal_milestone_progress TEXT,
     full_markdown TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT unico_resumo_perfil_dia UNIQUE (profile_id, summary_date)
+    CONSTRAINT unico_resumo_perfil_dia UNIQUE (profile_id, summary_date),
+    CONSTRAINT fk_coach_resumos_diarios_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
 );
 
 -- ÍNDICES

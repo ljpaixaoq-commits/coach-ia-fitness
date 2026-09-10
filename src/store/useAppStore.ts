@@ -755,8 +755,10 @@ export function useAppStore() {
       };
 
       setWorkouts(prev => [newWorkout, ...prev]);
-      syncWorkout(newWorkout);
-      newWorkout.exercises?.forEach(ex => syncWorkoutExercise(ex));
+      await syncWorkout(newWorkout);
+      for (const ex of newWorkout.exercises ?? []) {
+        await syncWorkoutExercise(ex);
+      }
       results.push(newWorkout);
     }
 
