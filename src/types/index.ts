@@ -3,12 +3,28 @@ export type Gender = 'male' | 'female' | 'other';
 export type ActivityLevel = 'sedentary' | 'moderate' | 'intense' | 'athlete';
 export type FitnessGoal = 'lose_weight' | 'hypertrophy' | 'endurance' | 'health';
 
+export interface UserAccount {
+  id: string;
+  profile_id: string;
+  username: string;
+  password_hash: string;
+  role: UserRole;
+  is_active: boolean;
+  access_expires_at?: string | null;
+  access_days?: number | null;
+  last_login_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Profile {
   id: string;
   user_id?: string;
   name: string;
   nickname?: string;
   email?: string;
+  cpf?: string;
+  birth_date?: string;
   avatar_url?: string;
   role: UserRole;
   gender: Gender;

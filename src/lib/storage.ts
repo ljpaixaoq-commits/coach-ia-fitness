@@ -6,6 +6,8 @@ export const INITIAL_PROFILES: Profile[] = [
     name: 'Leonardo',
     nickname: 'Leo',
     email: 'leonardo@example.com',
+    cpf: '11753940761',
+    birth_date: '1986-05-17',
     role: 'admin',
     gender: 'male',
     age: 32,

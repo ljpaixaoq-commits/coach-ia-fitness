@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
+import { hashPassword, verifyPassword, onlyDigits, isValidCPF } from './auth';
 import {
   Profile,
   Workout,
@@ -11,7 +12,8 @@ import {
   InjuryPainLog,
   EvolutionPhoto,
   Goal,
-  AICoachMessage
+  AICoachMessage,
+  UserAccount
 } from '../types';
 
 export interface AllData {
@@ -343,4 +345,228 @@ export function syncGoal(g: Goal) {
 // ── AI Message Sync ────────────────────────────────────────────
 export function syncMessage(m: AICoachMessage) {
   insert('ai_coach_messages', m);
+}
+
+// ── AUTH ───────────────────────────────────────────────────────
+
+export interface LoginResult {
+  account: UserAccount;
+  profile: Profile;
+}
+
+export async function loginUser(username: string, password: string): Promise<LoginResult> {
+  const cpf = onlyDigits(username);
+  if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
+
+  const { data: account, error } = await supabase
+    .from('user_accounts')
+    .select('*')
+    .eq('username', cpf)
+    .maybeSingle();
+
+  if (error) throw new Error('Erro ao consultar usuário: ' + error.message);
+  if (!account) throw new Error('Usuário não encontrado. Verifique o CPF ou faça o cadastro.');
+
+  const ok = await verifyPassword(password, account.password_hash);
+  if (!ok) throw new Error('Senha incorreta.');
+
+  if (!account.is_active) throw new Error('Usuário inativo. Aguarde aprovação do administrador.');
+
+  const today = new Date().toISOString().split('T')[0];
+  if (account.access_expires_at && account.access_expires_at < today) {
+    throw new Error('Acesso expirado. Entre em contato com o administrador.');
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', account.profile_id)
+    .maybeSingle();
+
+  if (profileError || !profile) throw new Error('Perfil vinculado não encontrado.');
+
+  await supabase.from('user_accounts').update({ last_login_at: new Date().toISOString() }).eq('id', account.id);
+
+  return { account: { ...account, last_login_at: new Date().toISOString() }, profile };
+}
+
+export interface RegisterInput {
+  name: string;
+  email?: string;
+  cpf: string;
+  birthDate: string;
+  gender?: string;
+  role?: 'admin' | 'member' | 'spouse';
+}
+
+export async function registerUser(input: RegisterInput, password: string): Promise<void> {
+  const cpf = onlyDigits(input.cpf);
+  if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
+  if (!input.name.trim()) throw new Error('Informe o nome.');
+  if (!input.birthDate) throw new Error('Informe a data de nascimento.');
+  if (password.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
+
+  const { data: existing } = await supabase
+    .from('user_accounts')
+    .select('id')
+    .eq('username', cpf)
+    .maybeSingle();
+  if (existing) throw new Error('CPF já cadastrado.');
+
+  const passwordHash = await hashPassword(password);
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      name: input.name.trim(),
+      email: input.email || null,
+      cpf,
+      birth_date: input.birthDate,
+      role: input.role || 'member',
+      gender: input.gender || 'other',
+      age: calcAge(input.birthDate),
+      height: 0,
+      current_weight: 0,
+      target_weight: 0,
+      activity_level: 'moderate',
+      fitness_goal: 'health',
+      daily_water_target_ml: 3000,
+      daily_calorie_target: 2200,
+      daily_protein_target_g: 160,
+      daily_carb_target_g: 200,
+      daily_fat_target_g: 60
+    })
+    .select()
+    .single();
+
+  if (profileError) throw new Error('Erro ao criar perfil: ' + profileError.message);
+
+  const { error } = await supabase.from('user_accounts').insert({
+    profile_id: profile.id,
+    username: cpf,
+    password_hash: passwordHash,
+    role: input.role || 'member',
+    is_active: false
+  });
+
+  if (error) throw new Error('Erro ao criar conta: ' + error.message);
+}
+
+export async function resetPasswordByCpf(cpf: string, birthDate: string, newPassword: string): Promise<void> {
+  const c = onlyDigits(cpf);
+  if (!isValidCPF(c)) throw new Error('CPF inválido.');
+  if (!birthDate) throw new Error('Informe a data de nascimento.');
+  if (newPassword.length < 4) throw new Error('A nova senha deve ter ao menos 4 caracteres.');
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('cpf', c)
+    .eq('birth_date', birthDate)
+    .maybeSingle();
+
+  if (profileError) throw new Error('Erro ao consultar dados: ' + profileError.message);
+  if (!profile) throw new Error('CPF e data de nascimento não correspondem a nenhum usuário.');
+
+  const { data: account } = await supabase
+    .from('user_accounts')
+    .select('id')
+    .eq('profile_id', profile.id)
+    .maybeSingle();
+
+  if (!account) throw new Error('Usuário não possui conta de acesso registrada.');
+
+  const passwordHash = await hashPassword(newPassword);
+
+  const { error } = await supabase
+    .from('user_accounts')
+    .update({ password_hash: passwordHash, updated_at: new Date().toISOString() })
+    .eq('id', account.id);
+
+  if (error) throw new Error('Erro ao redefinir senha: ' + error.message);
+}
+
+export interface UserWithProfile extends UserAccount {
+  profile: Profile | null;
+}
+
+export async function listUsers(): Promise<UserWithProfile[]> {
+  const { data: accounts, error } = await supabase
+    .from('user_accounts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error('Erro ao listar usuários: ' + error.message);
+
+  const { data: profiles, error: profileError } = await supabase.from('profiles').select('*');
+  if (profileError) throw new Error('Erro ao consultar perfis: ' + profileError.message);
+
+  const profileMap = new Map<string, Profile>((profiles || []).map((p: Profile) => [p.id, p]));
+
+  return (accounts || []).map(a => ({
+    ...a,
+    profile: profileMap.get(a.profile_id) || null
+  }));
+}
+
+export async function setUserActive(accountId: string, isActive: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('user_accounts')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', accountId);
+  if (error) throw new Error('Erro ao atualizar usuário: ' + error.message);
+}
+
+export async function setUserExpiration(accountId: string, expiresAt: string | null, days?: number): Promise<void> {
+  let accessExpiresAt = expiresAt;
+  if (days && days > 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    accessExpiresAt = d.toISOString().split('T')[0];
+  }
+  const { error } = await supabase
+    .from('user_accounts')
+    .update({ access_expires_at: accessExpiresAt, access_days: days || null, updated_at: new Date().toISOString() })
+    .eq('id', accountId);
+  if (error) throw new Error('Erro ao definir expiração: ' + error.message);
+}
+
+export async function ensureAdminAccount(cpf: string, birthDate: string, password: string): Promise<void> {
+  const c = onlyDigits(cpf);
+  if (!isSupabaseConfigured()) return;
+
+  const { data: existingAccount } = await supabase
+    .from('user_accounts')
+    .select('id')
+    .eq('username', c)
+    .maybeSingle();
+  if (existingAccount) return;
+
+  const { data: profiles } = await supabase.from('profiles').select('*').order('created_at').limit(1);
+  const adminProfile = (profiles || [])[0];
+  if (!adminProfile) return;
+
+  await supabase
+    .from('profiles')
+    .update({ cpf: c, birth_date: birthDate })
+    .eq('id', adminProfile.id);
+
+  const passwordHash = await hashPassword(password);
+
+  await supabase.from('user_accounts').upsert({
+    profile_id: adminProfile.id,
+    username: c,
+    password_hash: passwordHash,
+    role: 'admin',
+    is_active: true
+  });
+}
+
+function calcAge(birthDate: string): number {
+  const birth = new Date(birthDate);
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
 }

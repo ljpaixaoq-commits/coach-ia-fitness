@@ -36,9 +36,19 @@ import {
   syncInjury,
   syncPhoto,
   syncGoal,
-  syncMessage
+  syncMessage,
+  loginUser,
+  registerUser,
+  resetPasswordByCpf,
+  listUsers,
+  setUserActive,
+  setUserExpiration,
+  ensureAdminAccount,
+  UserWithProfile,
+  RegisterInput
 } from '../lib/db';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { UserAccount } from '../types';
 
 export type NavTab =
   | 'dashboard'
@@ -51,11 +61,99 @@ export type NavTab =
   | 'photos'
   | 'goals'
   | 'calendar'
-  | 'profile';
+  | 'profile'
+  | 'admin';
 
 export function useAppStore() {
   // Supabase sync status
   const [dbConnected, setDbConnected] = useState<boolean>(() => isSupabaseConfigured());
+
+  // Authentication
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    const saved = localStorage.getItem('coach_session_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<UserWithProfile[]>([]);
+
+  const isAuthenticated = !!currentUser;
+
+  const login = async (username: string, password: string) => {
+    setAuthBusy(true);
+    setAuthError(null);
+    try {
+      const result = await loginUser(username, password);
+      setCurrentUser(result.account);
+      localStorage.setItem('coach_session_user', JSON.stringify(result.account));
+      setActiveProfileId(result.account.profile_id);
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('coach_session_user');
+  };
+
+  const register = async (input: RegisterInput, password: string) => {
+    setAuthBusy(true);
+    setAuthError(null);
+    try {
+      await registerUser(input, password);
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const resetPassword = async (cpf: string, birthDate: string, newPassword: string) => {
+    setAuthBusy(true);
+    setAuthError(null);
+    try {
+      await resetPasswordByCpf(cpf, birthDate, newPassword);
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const loadAdminUsers = async () => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    try {
+      const users = await listUsers();
+      setAdminUsers(users);
+    } catch (e: any) {
+      setAuthError(e.message);
+    }
+  };
+
+  const toggleUserActive = async (accountId: string, isActive: boolean) => {
+    try {
+      await setUserActive(accountId, isActive);
+      setAdminUsers(prev => prev.map(u => (u.id === accountId ? { ...u, is_active: isActive } : u)));
+    } catch (e: any) {
+      setAuthError(e.message);
+    }
+  };
+
+  const updateUserExpiration = async (accountId: string, expiresAt: string | null, days?: number) => {
+    try {
+      await setUserExpiration(accountId, expiresAt, days);
+      await loadAdminUsers();
+    } catch (e: any) {
+      setAuthError(e.message);
+    }
+  };
 
   // Theme
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -225,7 +323,7 @@ export function useAppStore() {
     });
   }, []);
 
-  // Seed initial data if database is empty
+  // Seed initial data if database is empty + ensure admin account
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
@@ -258,6 +356,7 @@ export function useAppStore() {
           messages: []
         });
       }
+      ensureAdminAccount('11753940761', '1986-05-17', '123456');
     });
   }, []);
 
@@ -573,6 +672,18 @@ export function useAppStore() {
 
   return {
     dbConnected,
+    currentUser,
+    isAuthenticated,
+    authBusy,
+    authError,
+    login,
+    logout,
+    register,
+    resetPassword,
+    adminUsers,
+    loadAdminUsers,
+    toggleUserActive,
+    updateUserExpiration,
     theme,
     toggleTheme,
     activeTab,

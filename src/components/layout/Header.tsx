@@ -1,7 +1,7 @@
 import React from 'react';
 import { Profile } from '../../types';
 import { NavTab } from '../../store/useAppStore';
-import { Users, Sparkles, Bell, ShieldCheck, Flame } from 'lucide-react';
+import { Users, Sparkles, Bell, ShieldCheck, Flame, LogOut } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 
 interface HeaderProps {
@@ -12,6 +12,9 @@ interface HeaderProps {
   onOpenSmartSummary: () => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  currentUserName?: string;
+  isAdmin?: boolean;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,7 +24,10 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onOpenSmartSummary,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  currentUserName,
+  isAdmin,
+  onLogout
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-surface-primary/90 backdrop-blur-md border-b border-line/80 px-4 lg:px-8 py-3 flex items-center justify-between">
@@ -59,6 +65,13 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center space-x-2 sm:space-x-3">
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 
+        {isAdmin && (
+          <span className="hidden md:flex items-center space-x-1 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[10px] font-bold text-blue-300">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>ADMIN</span>
+          </span>
+        )}
+
         <button
           onClick={onOpenSmartSummary}
           className="relative px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border border-blue-500/30 text-xs font-semibold text-blue-300 flex items-center space-x-1.5 transition-all shadow-glow-blue"
@@ -88,6 +101,15 @@ export const Header: React.FC<HeaderProps> = ({
             </select>
           </div>
         </div>
+
+        {/* Logout */}
+        <button
+          onClick={onLogout}
+          className="p-2.5 rounded-xl bg-dark-850 border border-line text-content-muted hover:text-rose-400 hover:border-rose-500/40 transition-all"
+          title={currentUserName ? `Sair de ${currentUserName}` : 'Sair'}
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

@@ -18,6 +18,8 @@ import { PhotosView } from './views/PhotosView';
 import { GoalsView } from './views/GoalsView';
 import { CalendarView } from './views/CalendarView';
 import { ProfileFamilyView } from './views/ProfileFamilyView';
+import { AuthView } from './views/AuthView';
+import { AdminUsersView } from './views/AdminUsersView';
 
 import {
   TrendingUp,
@@ -27,6 +29,7 @@ import {
   Target,
   CalendarDays,
   Users,
+  ShieldCheck,
   X
 } from 'lucide-react';
 
@@ -41,6 +44,18 @@ export function App() {
     html.classList.remove('dark', 'light');
     html.classList.add(store.theme);
   }, [store.theme]);
+
+  if (!store.isAuthenticated) {
+    return (
+      <AuthView
+        onLogin={store.login}
+        onRegister={store.register}
+        onResetPassword={store.resetPassword}
+        authBusy={store.authBusy}
+        authError={store.authError}
+      />
+    );
+  }
 
   const customBlend = store.supplements.find((s) => s.is_custom_blend);
 
@@ -61,12 +76,15 @@ export function App() {
         onOpenSmartSummary={() => setIsSmartSummaryModalOpen(true)}
         theme={store.theme}
         onToggleTheme={store.toggleTheme}
+        currentUserName={store.currentUser?.profile_id ? store.activeProfile.name : undefined}
+        isAdmin={store.currentUser?.role === 'admin'}
+        onLogout={store.logout}
       />
 
       {/* 2. Main Content Area with Sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop Sidebar */}
-        <Sidebar activeTab={store.activeTab} onSelectTab={store.setActiveTab} />
+        <Sidebar activeTab={store.activeTab} onSelectTab={store.setActiveTab} isAdmin={store.currentUser?.role === 'admin'} />
 
         {/* Dynamic Screen View */}
         <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 max-w-7xl mx-auto w-full">
@@ -180,6 +198,17 @@ export function App() {
               onUpdateProfile={store.updateProfile}
             />
           )}
+
+          {store.activeTab === 'admin' && store.currentUser?.role === 'admin' && (
+            <AdminUsersView
+              users={store.adminUsers}
+              isAdmin={true}
+              onLoad={store.loadAdminUsers}
+              onToggleActive={store.toggleUserActive}
+              onSetExpiration={store.updateUserExpiration}
+              error={store.authError}
+            />
+          )}
         </main>
       </div>
 
@@ -260,6 +289,16 @@ export function App() {
                 <Users className="w-4 h-4" />
                 <span>Perfil & Gestão Familiar</span>
               </button>
+
+              {store.currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => { store.setActiveTab('admin'); setIsMobileMenuOpen(false); }}
+                  className="col-span-2 p-3 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center space-x-2 text-amber-400 font-bold"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Administração de Usuários</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

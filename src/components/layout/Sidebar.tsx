@@ -11,16 +11,18 @@ import {
   Camera,
   Target,
   CalendarDays,
-  Users
+  Users,
+  ShieldCheck
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
+  isAdmin?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
-  const menuItems = [
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmin }) => {
+  const baseItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
     { id: 'workouts', label: 'Treinos', icon: Dumbbell, badge: 'Hoje' },
     { id: 'aicoach', label: 'Coach IA', icon: Bot, badge: 'IA' },
@@ -34,12 +36,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
     { id: 'profile', label: 'Perfil & Família', icon: Users, badge: null }
   ];
 
+  if (isAdmin) {
+    baseItems.push({ id: 'admin', label: 'Administração', icon: ShieldCheck, badge: null } as any);
+  }
+
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-dark-950 border-r border-line/80 p-4 space-y-6 shrink-0 min-h-screen">
       <div className="space-y-1">
         <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-content-muted">Módulos do Sistema</p>
         <nav className="space-y-1 pt-2">
-          {menuItems.map((item) => {
+          {baseItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -48,12 +54,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
                 onClick={() => onSelectTab(item.id as NavTab)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-glow-blue font-semibold'
+                    ? item.id === 'admin'
+                      ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-glow-blue font-semibold'
+                      : 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-glow-blue font-semibold'
                     : 'text-content-muted hover:text-content-secondary hover:bg-dark-850 border border-transparent'
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-content-muted'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : item.id === 'admin' ? 'text-amber-400' : 'text-content-muted'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
