@@ -24,6 +24,21 @@ import {
   INITIAL_PHOTOS
 } from '../lib/storage';
 import { generateSmartDailySummary, processAICoachPrompt } from '../lib/ai-coach';
+import {
+  loadAllData,
+  seedInitialData,
+  AllData,
+  syncProfile,
+  syncWaterLog,
+  syncMeal,
+  syncSupplement,
+  syncHealthMetric,
+  syncInjury,
+  syncPhoto,
+  syncGoal,
+  syncMessage
+} from '../lib/db';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export type NavTab =
   | 'dashboard'
@@ -39,6 +54,9 @@ export type NavTab =
   | 'profile';
 
 export function useAppStore() {
+  // Supabase sync status
+  const [dbConnected, setDbConnected] = useState<boolean>(() => isSupabaseConfigured());
+
   // Theme
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('coach_theme');
@@ -183,6 +201,66 @@ export function useAppStore() {
     localStorage.setItem('coach_ai_messages', JSON.stringify(messages));
   }, [messages]);
 
+  const refreshFromDB = (data: AllData) => {
+    if (!data) return;
+    setProfiles(data.profiles);
+    setWorkouts(data.workouts);
+    setMeals(data.meals);
+    setWaterLogs(data.waterLogs);
+    setSupplements(data.supplements);
+    setHealthMetrics(data.healthMetrics);
+    setInjuries(data.injuries);
+    setPhotos(data.photos);
+    setGoals(data.goals);
+    setMessages(data.messages);
+  };
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    loadAllData().then(data => {
+      if (!data) return;
+      refreshFromDB(data);
+    });
+  }, []);
+
+  // Seed initial data if database is empty
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    loadAllData().then(data => {
+      if (!data) return;
+      const hasProfiles = data.profiles.length > 0;
+      if (!hasProfiles) {
+        seedInitialData({
+          profiles: INITIAL_PROFILES,
+          workouts: INITIAL_WORKOUTS,
+          meals: INITIAL_MEALS,
+          waterLogs: [],
+          supplements: INITIAL_SUPPLEMENTS,
+          healthMetrics: INITIAL_HEALTH_METRICS,
+          injuries: INITIAL_INJURIES,
+          photos: INITIAL_PHOTOS,
+          goals: INITIAL_GOALS,
+          messages: []
+        });
+        refreshFromDB({
+          profiles: INITIAL_PROFILES,
+          workouts: INITIAL_WORKOUTS,
+          meals: INITIAL_MEALS,
+          waterLogs: [],
+          supplements: INITIAL_SUPPLEMENTS,
+          healthMetrics: INITIAL_HEALTH_METRICS,
+          injuries: INITIAL_INJURIES,
+          photos: INITIAL_PHOTOS,
+          goals: INITIAL_GOALS,
+          messages: []
+        });
+      }
+    });
+  }, []);
+
   // Rest Timer Countdown Interval
   useEffect(() => {
     let interval: any = null;
@@ -243,10 +321,12 @@ export function useAppStore() {
   const addProfile = (newProfile: Profile) => {
     setProfiles(prev => [...prev, newProfile]);
     setActiveProfileId(newProfile.id);
+    syncProfile(newProfile);
   };
 
   const updateProfile = (updated: Profile) => {
     setProfiles(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+    syncProfile(updated);
   };
 
   // Workout Actions
@@ -368,6 +448,7 @@ export function useAppStore() {
       logged_at: new Date().toISOString()
     };
     setWaterLogs(prev => [...prev, newLog]);
+    syncWaterLog(newLog);
   };
 
   const addMeal = (meal: Omit<Meal, 'id' | 'profile_id'>) => {
@@ -377,6 +458,7 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setMeals(prev => [newMeal, ...prev]);
+    syncMeal(newMeal);
   };
 
   // Supplement Actions
@@ -387,16 +469,16 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setSupplements(prev => [...prev, newSupp]);
+    syncSupplement(newSupp);
   };
 
   const takeSupplementDose = (suppId: string) => {
     setSupplements(prev =>
       prev.map(s => {
         if (s.id === suppId) {
-          return {
-            ...s,
-            current_stock_doses: Math.max(0, s.current_stock_doses - 1)
-          };
+          const updated = { ...s, current_stock_doses: Math.max(0, s.current_stock_doses - 1) };
+          syncSupplement(updated);
+          return updated;
         }
         return s;
       })
@@ -411,6 +493,7 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setHealthMetrics(prev => [...prev, newMetric]);
+    syncHealthMetric(newMetric);
     if (metric.weight_kg) {
       updateProfile({ ...activeProfile, current_weight: metric.weight_kg });
     }
@@ -423,11 +506,17 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setInjuries(prev => [newLog, ...prev]);
+    syncInjury(newLog);
   };
 
   const updateInjuryPainLevel = (injuryId: string, level: number) => {
     setInjuries(prev =>
-      prev.map(i => (i.id === injuryId ? { ...i, pain_level: level } : i))
+      prev.map(i => {
+        if (i.id !== injuryId) return i;
+        const updated = { ...i, pain_level: level };
+        syncInjury(updated);
+        return updated;
+      })
     );
   };
 
@@ -439,6 +528,7 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setPhotos(prev => [newPhoto, ...prev]);
+    syncPhoto(newPhoto);
   };
 
   // Goals Actions
@@ -449,6 +539,7 @@ export function useAppStore() {
       profile_id: activeProfile.id
     };
     setGoals(prev => [...prev, newGoal]);
+    syncGoal(newGoal);
   };
 
   // AI Chat Actions
@@ -462,6 +553,7 @@ export function useAppStore() {
     };
 
     setMessages(prev => [...prev, userMsg]);
+    syncMessage(userMsg);
 
     setTimeout(() => {
       const response = processAICoachPrompt(userText, activeProfile, todayWorkout, userInjuries);
@@ -475,10 +567,12 @@ export function useAppStore() {
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, aiMsg]);
+      syncMessage(aiMsg);
     }, 600);
   };
 
   return {
+    dbConnected,
     theme,
     toggleTheme,
     activeTab,
