@@ -18,7 +18,7 @@ import {
   Filter
 } from 'lucide-react';
 
-type FilterStatus = 'all' | 'active' | 'pending' | 'expired';
+type FilterStatus = 'all' | 'active' | 'pending' | 'inactive' | 'expired';
 
 interface AdminUsersViewProps {
   users: UserWithProfile[];
@@ -376,17 +376,24 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const isExpired = (u: UserWithProfile) => !!(u.access_expires_at && u.access_expires_at < today);
 
+  // "Aguardando aprovação" = conta nova nunca ativada (nunca logou)
+  // "Inativos" = já logou antes e foi desativado pelo admin
+  const isPending = (u: UserWithProfile) => !u.is_active && !u.last_login_at;
+  const isInactive = (u: UserWithProfile) => !u.is_active && !!u.last_login_at;
+
   const counts = useMemo(() => ({
     total: users.length,
     active: users.filter(u => u.is_active && !isExpired(u)).length,
-    pending: users.filter(u => !u.is_active).length,
+    pending: users.filter(u => isPending(u)).length,
+    inactive: users.filter(u => isInactive(u)).length,
     expired: users.filter(u => u.is_active && isExpired(u)).length
   }), [users, today]);
 
   const filteredUsers = useMemo(() => {
     let result = users;
     if (activeFilter === 'active') result = result.filter(u => u.is_active && !isExpired(u));
-    else if (activeFilter === 'pending') result = result.filter(u => !u.is_active);
+    else if (activeFilter === 'pending') result = result.filter(u => isPending(u));
+    else if (activeFilter === 'inactive') result = result.filter(u => isInactive(u));
     else if (activeFilter === 'expired') result = result.filter(u => u.is_active && isExpired(u));
 
     if (searchQuery.trim()) {
@@ -401,9 +408,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
   }, [users, activeFilter, searchQuery, today]);
 
   const filterButtons: { key: FilterStatus; label: string; count: number; color: string; activeColor: string; icon: any }[] = [
-    { key: 'all', label: 'Todos', count: counts.total, color: 'text-slate-400', activeColor: 'bg-blue-600/15 border-blue-500/30 text-blue-400', icon: Users },
-    { key: 'active', label: 'Ativos', count: counts.active, color: 'text-emerald-400', activeColor: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400', icon: Power },
-    { key: 'pending', label: 'Pendentes', count: counts.pending, color: 'text-amber-400', activeColor: 'bg-amber-500/15 border-amber-500/30 text-amber-400', icon: UserPlus },
+    { key: 'all', label: 'Total de Contas', count: counts.total, color: 'text-blue-400', activeColor: 'bg-blue-600/15 border-blue-500/30 text-blue-400', icon: Users },
+    { key: 'active', label: 'Ativos e Válidos', count: counts.active, color: 'text-emerald-400', activeColor: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400', icon: Power },
+    { key: 'pending', label: 'Aguardando Aprovação', count: counts.pending, color: 'text-amber-400', activeColor: 'bg-amber-500/15 border-amber-500/30 text-amber-400', icon: UserPlus },
+    { key: 'inactive', label: 'Usuários Inativos', count: counts.inactive, color: 'text-slate-400', activeColor: 'bg-slate-500/15 border-slate-500/40 text-slate-300', icon: ShieldCheck },
     { key: 'expired', label: 'Expirados', count: counts.expired, color: 'text-rose-400', activeColor: 'bg-rose-500/15 border-rose-500/30 text-rose-400', icon: CalendarX }
   ];
 
@@ -442,8 +450,8 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
         </div>
       )}
 
-      {/* Filter Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* Filter Cards - Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {filterButtons.map((f) => {
           const Icon = f.icon;
           const isActive = activeFilter === f.key;
@@ -456,9 +464,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
                   ? f.activeColor
                   : 'bg-dark-900 border-slate-800 hover:border-slate-700'
               }`}
+              title={`Filtrar por ${f.label}`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[11px] font-medium ${isActive ? '' : 'text-slate-400'}`}>{f.label}</span>
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${isActive ? '' : 'text-slate-400'}`}>{f.label}</span>
                 <Icon className={`w-4 h-4 ${isActive ? '' : f.color}`} />
               </div>
               <p className={`text-xl font-bold mt-1 ${isActive ? '' : 'text-white'}`}>{f.count}</p>
@@ -475,12 +484,13 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar por nome ou CPF..."
-          className="w-full bg-dark-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+          className="w-full bg-dark-900 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-3 text-slate-500 hover:text-white"
+            className="absolute right-3 top-3 text-slate-500 hover:text-white transition-colors"
+            title="Limpar busca"
           >
             <X className="w-4 h-4" />
           </button>
@@ -518,12 +528,16 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
         <div className="space-y-3">
           {filteredUsers.map((user) => {
             const expired = isExpired(user);
-            const statusColor = !user.is_active
+            const pending = isPending(user);
+            const inactive = isInactive(user);
+            const statusColor = pending
               ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+              : inactive
+              ? 'bg-slate-500/10 text-slate-300 border-slate-500/40'
               : expired
               ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
               : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
-            const statusLabel = !user.is_active ? 'Inativo' : expired ? 'Expirado' : 'Ativo';
+            const statusLabel = pending ? 'Aguardando aprovação' : inactive ? 'Inativo' : expired ? 'Expirado' : 'Ativo';
 
             return (
               <div key={user.id} className="p-4 rounded-2xl bg-dark-900 border border-slate-800">
