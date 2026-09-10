@@ -576,6 +576,23 @@ export function useAppStore() {
     );
   };
 
+  const updateExerciseVideo = (workoutId: string, exerciseId: string, videoUrl: string) => {
+    setWorkouts(prev =>
+      prev.map(w => {
+        if (w.id !== workoutId || !w.exercises) return w;
+
+        const updatedEx = w.exercises.map(ex =>
+          ex.id === exerciseId ? { ...ex, video_url: videoUrl || undefined } : ex
+        );
+
+        const updated = { ...w, exercises: updatedEx };
+        const target = updatedEx.find(ex => ex.id === exerciseId);
+        if (target) syncWorkoutExercise(target);
+        return updated;
+      })
+    );
+  };
+
   const startRestTimer = (seconds: number) => {
     setRestTimeRemaining(seconds);
     setIsResting(true);
@@ -790,6 +807,7 @@ export function useAppStore() {
     toggleExerciseCompleted,
     updateExerciseWeight,
     updateExerciseDuration,
+    updateExerciseVideo,
     isResting,
     restTimeRemaining,
     startRestTimer,

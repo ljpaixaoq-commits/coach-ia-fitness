@@ -15,7 +15,10 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Check
+  Check,
+  Pencil,
+  Link as LinkIcon,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -25,6 +28,7 @@ interface WorkoutsViewProps {
   onToggleSet: (workoutId: string, exerciseId: string, setNumber: number) => void;
   onUpdateWeight: (workoutId: string, exerciseId: string, newWeightKg: number) => void;
   onUpdateDuration: (workoutId: string, exerciseId: string, newDurationMin: number) => void;
+  onUpdateVideo: (workoutId: string, exerciseId: string, videoUrl: string) => void;
   onStartRestTimer: (seconds: number) => void;
   onAskAIForAdaptation: (prompt: string) => void;
 }
@@ -35,6 +39,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   onToggleSet,
   onUpdateWeight,
   onUpdateDuration,
+  onUpdateVideo,
   onStartRestTimer,
   onAskAIForAdaptation
 }) => {
@@ -46,6 +51,16 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   const [tempWeight, setTempWeight] = useState<string>('');
   const [editingDurationExId, setEditingDurationExId] = useState<string | null>(null);
   const [tempDuration, setTempDuration] = useState<string>('');
+  const [editingVideoExId, setEditingVideoExId] = useState<string | null>(null);
+  const [tempVideoUrl, setTempVideoUrl] = useState<string>('');
+
+  const getWorkoutTabLabel = (w: Workout) => {
+    const v = w.title.match(/Variação (\d+)/);
+    if (v) {
+      return `Aba ${String.fromCharCode(64 + parseInt(v[1], 10))}`;
+    }
+    return w.title.split(' - ')[0];
+  };
 
   const currentWorkout = workouts.find((w) => w.id === selectedWorkoutId) || workouts[0];
 
@@ -127,7 +142,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                   : 'bg-dark-850 hover:bg-dark-800 text-slate-300 border border-slate-800'
               }`}
             >
-              {w.title.split(' - ')[0]}
+              {getWorkoutTabLabel(w)}
             </button>
           ))}
         </div>
@@ -259,6 +274,23 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                       </button>
                     )}
 
+                    <button
+                      onClick={() => {
+                        if (editingVideoExId === ex.id) {
+                          setEditingVideoExId(null);
+                        } else {
+                          setEditingVideoExId(ex.id);
+                          setTempVideoUrl(ex.video_url || '');
+                        }
+                      }}
+                      className="p-1.5 rounded-xl bg-dark-850 hover:bg-dark-800 border border-slate-700 text-slate-400 hover:text-blue-300 text-xs font-bold flex items-center space-x-1 transition-all"
+                      title={ex.video_url ? 'Editar vídeo demonstrativo' : 'Adicionar vídeo demonstrativo'}
+                    >
+                      {ex.video_url
+                        ? <Pencil className="w-3.5 h-3.5" />
+                        : <LinkIcon className="w-3.5 h-3.5" />}
+                    </button>
+
                     {!isCardio && ex.rest_time_seconds > 0 && (
                       <button
                         onClick={() => onStartRestTimer(ex.rest_time_seconds)}
@@ -271,6 +303,43 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* Video URL Editor */}
+                {editingVideoExId === ex.id && (
+                  <div className="mt-3 p-3 rounded-xl bg-dark-900 border border-slate-700 space-y-2">
+                    <div className="flex items-center space-x-1.5 text-[11px] font-bold text-slate-400">
+                      <LinkIcon className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Vídeo demonstrativo (cole um link do YouTube)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={tempVideoUrl}
+                        onChange={(e) => setTempVideoUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="flex-1 bg-dark-850 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      />
+                      <button
+                        onClick={() => {
+                          onUpdateVideo(currentWorkout.id, ex.id, tempVideoUrl.trim());
+                          setEditingVideoExId(null);
+                        }}
+                        className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center space-x-1"
+                        title="Salvar link do vídeo"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Salvar</span>
+                      </button>
+                      <button
+                        onClick={() => setEditingVideoExId(null)}
+                        className="p-2 rounded-lg bg-dark-850 border border-slate-700 text-slate-400 hover:text-white"
+                        title="Cancelar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Body: CARDIO MODE or STRENGTH SET-BY-SET TRACKER */}
                 <div className="pt-3">

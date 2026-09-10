@@ -173,59 +173,97 @@ export interface WorkoutGoal {
   experience: 'beginner' | 'intermediate' | 'advanced';
 }
 
-const EXERCISE_DB: Record<string, { name: string; muscle: string; type: 'strength' | 'cardio' | 'isometric'; sets: number; reps: string; rest: number; kneeSafe: boolean }[]> = {
+interface ExerciseTemplate {
+  name: string;
+  muscle: string;
+  type: 'strength' | 'cardio' | 'isometric';
+  sets: number;
+  reps: string;
+  rest: number;
+  kneeSafe: boolean;
+  demo_instructions: string;
+  video_url?: string;
+}
+
+const EXERCISE_DB: Record<string, ExerciseTemplate[]> = {
   chest: [
-    { name: 'Supino Reto com Barra', muscle: 'Peito', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
-    { name: 'Supino Inclinado com Halteres', muscle: 'Peito', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true },
-    { name: 'Crucifixo na Máquina', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Crossover', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Flexão de Braços', muscle: 'Peito', type: 'strength', sets: 3, reps: '10-15', rest: 60, kneeSafe: true }
+    { name: 'Supino Reto com Barra', muscle: 'Peito', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=8UiTPNj66AU', demo_instructions: 'Deite no banco com o olhar abaixo da barra. Escápulas firmes, desça a barra até a linha do peito e empurre sem travar o cotovelo.' },
+    { name: 'Supino Inclinado com Halteres', muscle: 'Peito', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true, demo_instructions: 'Banco a 30-45°. Cotovelos a 45° do tronco, desça os halteres até a linha do peitoral e empurre para cima com controle.' },
+    { name: 'Crucifixo na Máquina', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Ajuste o assento para pegar na altura do peitoral. Faça o movimento de abraço mantendo os cotovelos levemente flexionados.' },
+    { name: 'Crossover', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Polias acima dos ombros, tronco levemente à frente. Puxe as mãos em arco até a frente do abdômen contraindo o peito.' },
+    { name: 'Flexão de Braços', muscle: 'Peito', type: 'strength', sets: 3, reps: '10-15', rest: 60, kneeSafe: true, demo_instructions: 'Corpo alinhado, mãos na largura dos ombros. Desça até o peito quase tocar o chão e suba controlando.' }
   ],
   back: [
-    { name: 'Puxada Frontal', muscle: 'Costas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true },
-    { name: 'Remada Curvada', muscle: 'Costas', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
-    { name: 'Remada Unilateral', muscle: 'Costas', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
-    { name: 'Pulldown', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Encolhimento (Trapézio)', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+    { name: 'Puxada Frontal', muscle: 'Costas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=XxQNTzaXeH0', demo_instructions: 'Sente com o tronco ereto. Puxe a barra em direção à parte superior do peito, levando as escápulas para trás.' },
+    { name: 'Remada Curvada', muscle: 'Costas', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=mqeBlb7lVfM', demo_instructions: 'Pés afastados e tronco inclinado ~45° com a coluna neutra. Puxe a barra em direção ao abdômen com os cotovelos perto do corpo.' },
+    { name: 'Remada Unilateral', muscle: 'Costas', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true, demo_instructions: 'Uma mão apoiada no banco, a outra segura o halter. Puxe o cotovelo em direção ao quadril mantendo o tronco estável.' },
+    { name: 'Pulldown', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Pegada média ou supinada. Puxe a barra em direção ao peito mantendo os cotovelos próximos ao corpo.' },
+    { name: 'Encolhimento (Trapézio)', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Em pé com halteres, eleve os ombros em direção às orelhas, segure 1 segundo e desça sem rotacionar.' }
   ],
   shoulders: [
-    { name: 'Desenvolvimento com Halteres', muscle: 'Ombros', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
-    { name: 'Elevação Lateral', muscle: 'Ombros', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Elevação Frontal', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Face Pull', muscle: 'Ombros', type: 'strength', sets: 3, reps: '15-20', rest: 60, kneeSafe: true },
-    { name: 'Crucifixo Inverso', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+    { name: 'Desenvolvimento com Halteres', muscle: 'Ombros', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=1WDYtgF0vQ8', demo_instructions: 'Sentado com encosto, halteres na altura dos ombros. Empurre para cima sem travar os cotovelos e desça controlado.' },
+    { name: 'Elevação Lateral', muscle: 'Ombros', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Cotovelos levemente flexionados, eleve os braços até a altura dos ombros e desça devagar, sem balançar o tronco.' },
+    { name: 'Elevação Frontal', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Com halteres à frente das coxas, eleve até a linha dos olhos e desça controlado, sem impulso.' },
+    { name: 'Face Pull', muscle: 'Ombros', type: 'strength', sets: 3, reps: '15-20', rest: 60, kneeSafe: true, demo_instructions: 'Corda na polia na altura dos olhos. Puxe em direção ao rosto abrindo as mãos e contraindo as escápulas.' },
+    { name: 'Crucifixo Inverso', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Tronco inclinado à frente, braços com leve flexão. Abra os braços para trás contraindo ombros posteriores e costas.' }
   ],
   legs: [
-    { name: 'Agachamento Livre', muscle: 'Pernas', type: 'strength', sets: 4, reps: '8-12', rest: 120, kneeSafe: false },
-    { name: 'Leg Press 45°', muscle: 'Pernas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: false },
-    { name: 'Cadeira Extensora', muscle: 'Quadríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Mesa Flexora', muscle: 'Posterior', type: 'strength', sets: 4, reps: '10-12', rest: 60, kneeSafe: true },
-    { name: 'Panturrilha em Pé', muscle: 'Panturrilha', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true },
-    { name: 'Elevação Pélvica', muscle: 'Glúteos', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Isometria de Quadríceps', muscle: 'Quadríceps', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true },
-    { name: 'Avanço com Halteres', muscle: 'Pernas', type: 'strength', sets: 3, reps: '10 cada', rest: 60, kneeSafe: false }
+    { name: 'Agachamento Livre', muscle: 'Pernas', type: 'strength', sets: 4, reps: '8-12', rest: 120, kneeSafe: false, video_url: 'https://www.youtube.com/watch?v=6ppjJrbrW7g', demo_instructions: 'Barra apoiada no trapézio, pés na largura do quadril. Desça levando o quadril para trás com o peito erguido e suba empurrando pelo calcanhar.' },
+    { name: 'Leg Press 45°', muscle: 'Pernas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: false, demo_instructions: 'Pés na plataforma na largura dos ombros. Desça até os joelhos chegarem a ~90° sem descolar a lombar do encosto.' },
+    { name: 'Cadeira Extensora', muscle: 'Quadríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=el3oHblB5DM', demo_instructions: 'Ajuste o eixo na altura dos tornozelos. Estenda os joelhos até o fim, contraia o quadríceps e volte controlado.' },
+    { name: 'Mesa Flexora', muscle: 'Posterior', type: 'strength', sets: 4, reps: '10-12', rest: 60, kneeSafe: true, demo_instructions: 'Deitado de bruços com o eixo nos calcanhares. Flexione os joelhos aproximando os pés do glúteo, sem levantar o quadril.' },
+    { name: 'Panturrilha em Pé', muscle: 'Panturrilha', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true, demo_instructions: 'Com a parte anterior dos pés no apoio, desça os calcanhares e suba na ponta dos pés até o máximo.' },
+    { name: 'Elevação Pélvica', muscle: 'Glúteos', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Deitado no chão com os joelhos flexionados. Empurre o quadril para cima contraindo os glúteos no topo e desça.' },
+    { name: 'Isometria de Quadríceps', muscle: 'Quadríceps', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true, demo_instructions: 'Sentado com a perna estendida, sustente a contração máxima do quadríceps sem soltar a tensão por 45 segundos.' },
+    { name: 'Avanço com Halteres', muscle: 'Pernas', type: 'strength', sets: 3, reps: '10 cada', rest: 60, kneeSafe: false, demo_instructions: 'Passada à frente com o tronco ereto. Desça até o joelho de trás quase tocar o chão e volte empurrando pelo calcanhar.' }
   ],
   arms: [
-    { name: 'Rosca Direta com Barra', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
-    { name: 'Rosca Alternada', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
-    { name: 'Tríceps Pulley', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
-    { name: 'Tríceps Testa', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
-    { name: 'Mergulho entre Bancos', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+    { name: 'Rosca Direta com Barra', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=Et1wgGMGW8w', demo_instructions: 'Cotovelos fixos ao lado do corpo. Eleve a barra até a altura do peito e desça controlado, sem balançar o tronco.' },
+    { name: 'Rosca Alternada', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true, demo_instructions: 'Alterne os braços flexionando o cotovelo com supinação no topo, controlando a descida.' },
+    { name: 'Tríceps Pulley', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=KhK5HWJfsrQ', demo_instructions: 'Cotovelos fixos ao lado do corpo. Puxe a corda para baixo até estender totalmente os braços no fim do movimento.' },
+    { name: 'Tríceps Testa', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true, demo_instructions: 'Deitado, halteres ou barra acima da testa. Flexione os cotovelos baixando até a testa e estenda sem abrir os cotovelos.' },
+    { name: 'Mergulho entre Bancos', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true, demo_instructions: 'Mãos apoiadas num banco, corpo à frente. Flexione os cotovelos descendo e suba sem abrir os cotovelos para os lados.' }
   ],
   core: [
-    { name: 'Prancha Frontal', muscle: 'Core', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true },
-    { name: 'Abdominal Crunch', muscle: 'Core', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true },
-    { name: 'Elevação de Pernas', muscle: 'Core', type: 'strength', sets: 3, reps: '12-15', rest: 45, kneeSafe: true },
-    { name: 'Russian Twist', muscle: 'Core', type: 'strength', sets: 3, reps: '20 total', rest: 45, kneeSafe: true },
-    { name: 'Prancha Lateral', muscle: 'Core', type: 'isometric', sets: 3, reps: '30s cada', rest: 45, kneeSafe: true }
+    { name: 'Prancha Frontal', muscle: 'Core', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true, video_url: 'https://www.youtube.com/watch?v=Yu0wjtD5FkU', demo_instructions: 'Cotovelos sob os ombros, corpo em linha reta, glúteo contraído e abdômen ativado. Não suba nem deixe cair o quadril.' },
+    { name: 'Abdominal Crunch', muscle: 'Core', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true, demo_instructions: 'Deitado com as mãos na cabeça (sem puxar). Contraia o abdômen elevando os ombros e volte controlado.' },
+    { name: 'Elevação de Pernas', muscle: 'Core', type: 'strength', sets: 3, reps: '12-15', rest: 45, kneeSafe: true, demo_instructions: 'Deitado com as mãos sob o glúteo. Eleve as pernas estendidas até ~90° e desça sem encostar no chão.' },
+    { name: 'Russian Twist', muscle: 'Core', type: 'strength', sets: 3, reps: '20 total', rest: 45, kneeSafe: true, demo_instructions: 'Sentado com o tronco inclinado. Gire o tronco levando as mãos para cada lado, mantendo os pés apoiados ou elevados.' },
+    { name: 'Prancha Lateral', muscle: 'Core', type: 'isometric', sets: 3, reps: '30s cada', rest: 45, kneeSafe: true, demo_instructions: 'De lado com o antebraço sob o ombro. Eleve o quadril mantendo o corpo em linha reta, sem deixar cair.' }
   ],
   cardio: [
-    { name: 'Esteira (Caminhada/Rotação)', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '20 min', rest: 0, kneeSafe: false },
-    { name: 'Bicicleta Ergométrica', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: true },
-    { name: 'Elíptico', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: false },
-    { name: 'Remador', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '10 min', rest: 0, kneeSafe: true }
+    { name: 'Esteira (Caminhada/Rotação)', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '20 min', rest: 0, kneeSafe: false, demo_instructions: 'Caminhe com progressão de ritmo, mantendo a postura ereta e os braços soltos. Ajuste a duração conforme seu condicionamento.' },
+    { name: 'Bicicleta Ergométrica', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: true, demo_instructions: 'Ajuste o banco na altura do quadril. Pedale com cadência constante, sem sobrecarregar os joelhos.' },
+    { name: 'Elíptico', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: false, demo_instructions: 'Postura ereta segurando as alças. Mova as pernas e braços com fluidez e ritmo constante.' },
+    { name: 'Remador', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '10 min', rest: 0, kneeSafe: true, demo_instructions: 'Empurre com as pernas, incline o tronco puxando a alça até o abdômen e retorne controlado.' }
   ]
 };
+
+function mapTemplateToExercise(ex: ExerciseTemplate, setsMultiplier: number, order: number): WorkoutExercise {
+  const sets = Math.round(ex.sets * setsMultiplier);
+  return {
+    id: `ex-ai-${Date.now()}-${order}`,
+    workout_id: '',
+    name: ex.name,
+    muscle_group: ex.muscle,
+    exercise_type: ex.type,
+    sets,
+    reps_target: ex.reps,
+    default_weight_kg: 0,
+    duration_minutes: ex.type === 'cardio' ? parseInt(ex.reps) || 15 : undefined,
+    rest_time_seconds: ex.rest,
+    video_url: ex.video_url,
+    demo_instructions: ex.demo_instructions,
+    order_index: order,
+    completed: false,
+    sets_data: Array.from({ length: sets }, (_, i) => ({
+      set_number: i + 1,
+      reps_target: ex.reps,
+      weight_kg: 0,
+      completed: false
+    }))
+  };
+}
 
 function buildExercises(groups: string[], limitations: string[], experience: 'beginner' | 'intermediate' | 'advanced', sessionMinutes: number): WorkoutExercise[] {
   const hasKneeIssue = limitations.some(l => l.toLowerCase().includes('joelho') || l.toLowerCase().includes('knee'));
@@ -248,27 +286,7 @@ function buildExercises(groups: string[], limitations: string[], experience: 'be
     const selected = filtered.slice(0, count);
 
     for (const ex of selected) {
-      const sets = Math.round(ex.sets * setsMultiplier);
-      exercises.push({
-        id: `ex-ai-${Date.now()}-${order}`,
-        workout_id: '',
-        name: ex.name,
-        muscle_group: ex.muscle,
-        exercise_type: ex.type,
-        sets,
-        reps_target: ex.reps,
-        default_weight_kg: 0,
-        duration_minutes: ex.type === 'cardio' ? parseInt(ex.reps) || 15 : undefined,
-        rest_time_seconds: ex.rest,
-        order_index: order++,
-        completed: false,
-        sets_data: Array.from({ length: sets }, (_, i) => ({
-          set_number: i + 1,
-          reps_target: ex.reps,
-          weight_kg: 0,
-          completed: false
-        }))
-      });
+      exercises.push(mapTemplateToExercise(ex, setsMultiplier, order++));
     }
   }
 
@@ -309,27 +327,7 @@ function buildExercisesShuffled(groups: string[], limitations: string[], experie
     const selected = shuffled.slice(0, count);
 
     for (const ex of selected) {
-      const sets = Math.round(ex.sets * setsMultiplier);
-      exercises.push({
-        id: `ex-ai-${Date.now()}-${order}`,
-        workout_id: '',
-        name: ex.name,
-        muscle_group: ex.muscle,
-        exercise_type: ex.type,
-        sets,
-        reps_target: ex.reps,
-        default_weight_kg: 0,
-        duration_minutes: ex.type === 'cardio' ? parseInt(ex.reps) || 15 : undefined,
-        rest_time_seconds: ex.rest,
-        order_index: order++,
-        completed: false,
-        sets_data: Array.from({ length: sets }, (_, i) => ({
-          set_number: i + 1,
-          reps_target: ex.reps,
-          weight_kg: 0,
-          completed: false
-        }))
-      });
+      exercises.push(mapTemplateToExercise(ex, setsMultiplier, order++));
     }
   }
 

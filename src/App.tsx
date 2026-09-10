@@ -114,6 +114,7 @@ export function App() {
               onToggleSet={store.toggleSetCompleted}
               onUpdateWeight={store.updateExerciseWeight}
               onUpdateDuration={store.updateExerciseDuration}
+              onUpdateVideo={store.updateExerciseVideo}
               onStartRestTimer={store.startRestTimer}
               onAskAIForAdaptation={(prompt) => {
                 store.sendAICoachMessage(prompt);
