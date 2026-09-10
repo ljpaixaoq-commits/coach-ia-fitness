@@ -23,7 +23,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -39,6 +39,7 @@ import {
   syncMessage,
   syncWorkout,
   syncWorkoutExercise,
+  deleteWorkouts,
   loginUser,
   registerUser,
   resetPasswordByCpf,
@@ -350,7 +351,10 @@ export function useAppStore() {
   const refreshFromDB = (data: AllData) => {
     if (!data) return;
     setProfiles(data.profiles);
-    setWorkouts(data.workouts);
+    setWorkouts(data.workouts.map(w => ({
+      ...w,
+      exercises: w.exercises?.map(enrichExerciseFromTemplate)
+    })));
     setMeals(data.meals);
     setWaterLogs(data.waterLogs);
     setSupplements(data.supplements);
@@ -771,6 +775,14 @@ export function useAppStore() {
     return results;
   };
 
+  // Keep only one workout (set): deletes all current workouts before creating a new one
+  const clearWorkouts = () => {
+    const toDelete = workouts.filter(w => w.profile_id === activeProfile.id);
+    if (toDelete.length === 0) return;
+    setWorkouts(prev => prev.filter(w => w.profile_id !== activeProfile.id));
+    deleteWorkouts(toDelete.map(w => w.id));
+  };
+
   return {
     dbConnected,
     currentUser,
@@ -836,6 +848,7 @@ export function useAppStore() {
     messages: userMessages,
     sendAICoachMessage,
     generateAndSaveWorkout,
+    clearWorkouts,
     smartDailySummary
   };
 }

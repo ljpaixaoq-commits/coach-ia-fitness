@@ -132,6 +132,8 @@ export function App() {
               onSendMessage={store.sendAICoachMessage}
               onGenerateWorkout={store.generateAndSaveWorkout}
               onNavigateTab={(tab) => store.setActiveTab(tab as NavTab)}
+              hasWorkouts={store.workouts.length > 0}
+              onClearWorkouts={store.clearWorkouts}
             />
           )}
 

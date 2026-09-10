@@ -302,6 +302,14 @@ export function syncWorkoutExercise(ex: WorkoutExercise) {
   upsert('workout_exercises', ex);
 }
 
+export function deleteWorkout(id: string) {
+  remove('workouts', id);
+}
+
+export function deleteWorkouts(ids: string[]) {
+  ids.forEach((id) => remove('workouts', id));
+}
+
 // ── Meal Sync ──────────────────────────────────────────────────
 export function syncMeal(m: Meal) {
   const { items, ...data } = m;

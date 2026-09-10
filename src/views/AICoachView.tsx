@@ -12,7 +12,8 @@ import {
   Dumbbell,
   CheckCircle2,
   ArrowLeft,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 
 interface AICoachViewProps {
@@ -23,6 +24,8 @@ interface AICoachViewProps {
   onSendMessage: (message: string) => void;
   onGenerateWorkout: (goal: WorkoutGoal, count: number) => Promise<Workout[]>;
   onNavigateTab: (tab: string) => void;
+  hasWorkouts: boolean;
+  onClearWorkouts: () => void;
 }
 
 type CoachMode = 'home' | 'create' | 'adjust' | 'improve' | 'chat';
@@ -59,7 +62,9 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   injuries,
   onSendMessage,
   onGenerateWorkout,
-  onNavigateTab
+  onNavigateTab,
+  hasWorkouts,
+  onClearWorkouts
 }) => {
   const [mode, setMode] = useState<CoachMode>('home');
   const [inputText, setInputText] = useState('');
@@ -77,6 +82,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const [generating, setGenerating] = useState(false);
   const [generatedWorkouts, setGeneratedWorkouts] = useState<Workout[]>([]);
   const [selectedModel, setSelectedModel] = useState(0);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,6 +96,14 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   }, [pendingPrompt]);
 
   const goCreate = () => {
+    if (hasWorkouts) {
+      setShowReplaceConfirm(true);
+      return;
+    }
+    startCreate();
+  };
+
+  const startCreate = () => {
     setMode('create');
     setCreateStep('objective');
     setObjectives([]);
@@ -98,6 +112,40 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
     setNumVariations(2);
     setSelectedModel(0);
   };
+
+  const confirmReplace = () => {
+    onClearWorkouts();
+    setShowReplaceConfirm(false);
+    startCreate();
+  };
+
+  const replaceModal = showReplaceConfirm && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowReplaceConfirm(false)}>
+      <div className="glassy-card w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mb-4">
+          <AlertTriangle className="w-6 h-6 text-amber-400" />
+        </div>
+        <h3 className="text-base font-bold text-white mb-2">Criar um novo treino?</h3>
+        <p className="text-xs text-slate-300 leading-relaxed mb-6">
+          Para continuar, o seu treino atual será <span className="text-amber-300 font-semibold">excluído</span>. Deseja criar um novo treino em seu lugar?
+        </p>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowReplaceConfirm(false)}
+            className="flex-1 py-2.5 rounded-xl bg-dark-850 border border-slate-700 text-slate-300 text-xs font-bold hover:text-white transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={confirmReplace}
+            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
+          >
+            Sim, criar novo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const startAdjust = () => {
     setMode('adjust');
@@ -258,6 +306,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             <ChevronRight className="w-5 h-5 text-blue-400" />
           </button>
         )}
+        {replaceModal}
       </div>
     );
   }
@@ -648,6 +697,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             </div>
           </div>
         )}
+        {replaceModal}
       </div>
     );
   }
