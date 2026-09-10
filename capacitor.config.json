@@ -1,0 +1,6 @@
+{
+  "appId": "com.coachia.fitness",
+  "appName": "Coach IA Pessoal",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   THEME CSS VARIABLES
+   ============================================ */
+.dark {
+  /* Dark backgrounds */
+  --color-dark-950: #07090E;
+  --color-dark-900: #0D111A;
+  --color-dark-850: #131826;
+  --color-dark-800: #1C2333;
+  --color-dark-700: #2A344D;
+  --color-dark-600: #3D4B6E;
+
+  /* Surface colors */
+  --color-surface-primary: #07090E;
+  --color-surface-secondary: #0D111A;
+  --color-surface-card: #131826;
+  --color-surface-input: #1C2933;
+  --color-surface-hover: #1E293B;
+
+  /* Content/text colors */
+  --color-content-primary: #F1F5F9;
+  --color-content-secondary: #94A3B8;
+  --color-content-muted: #64748B;
+  --color-content-inverse: #0F172A;
+
+  /* Border colors */
+  --color-line: #1E293B;
+  --color-line-strong: #334155;
+}
+
+:root:not(.dark) {
+  /* Light backgrounds */
+  --color-dark-950: #F8FAFC;
+  --color-dark-900: #FFFFFF;
+  --color-dark-850: #F1F5F9;
+  --color-dark-800: #E2E8F0;
+  --color-dark-700: #CBD5E1;
+  --color-dark-600: #94A3B8;
+
+  /* Surface colors */
+  --color-surface-primary: #F8FAFC;
+  --color-surface-secondary: #FFFFFF;
+  --color-surface-card: #FFFFFF;
+  --color-surface-input: #F8FAFC;
+  --color-surface-hover: #F1F5F9;
+
+  /* Content/text colors */
+  --color-content-primary: #1E293B;
+  --color-content-secondary: #475569;
+  --color-content-muted: #94A3B8;
+  --color-content-inverse: #F8FAFC;
+
+  /* Border colors */
+  --color-line: #E2E8F0;
+  --color-line-strong: #CBD5E1;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  body {
+    background-color: var(--color-surface-primary);
+    color: var(--color-content-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Theme-aware text utilities */
+  .dark .text-theme-primary { color: var(--color-content-primary); }
+  .dark .text-theme-secondary { color: var(--color-content-secondary); }
+  .dark .text-theme-muted { color: var(--color-content-muted); }
+  :root:not(.dark) .text-theme-primary { color: var(--color-content-primary); }
+  :root:not(.dark) .text-theme-secondary { color: var(--color-content-secondary); }
+  :root:not(.dark) .text-theme-muted { color: var(--color-content-muted); }
+
+  /* Make text-white adapt to light mode */
+  .dark .text-white { color: #FFFFFF; }
+  :root:not(.dark) .text-white { color: #1E293B; }
+
+  /* Make text-slate-400 adapt */
+  .dark .text-slate-400 { color: #94A3B8; }
+  :root:not(.dark) .text-slate-400 { color: #64748B; }
+
+  /* Make text-slate-300 adapt */
+  .dark .text-slate-300 { color: #CBD5E1; }
+  :root:not(.dark) .text-slate-300 { color: #475569; }
+
+  /* Make text-slate-200 adapt */
+  .dark .text-slate-200 { color: #E2E8F0; }
+  :root:not(.dark) .text-slate-200 { color: #334155; }
+
+  /* Make text-slate-500 adapt */
+  .dark .text-slate-500 { color: #64748B; }
+  :root:not(.dark) .text-slate-500 { color: #94A3B8; }
+
+  /* Custom dark scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-dark-900);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-dark-700);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3B82F6;
+  }
+}
+
+/* ============================================
+   BORDER OVERRIDES FOR LIGHT MODE
+   ============================================ */
+:root:not(.dark) .border-slate-800 { border-color: #E2E8F0; }
+:root:not(.dark) .border-slate-800\/80 { border-color: rgba(226, 232, 240, 0.8); }
+:root:not(.dark) .border-slate-700 { border-color: #CBD5E1; }
+:root:not(.dark) .border-slate-600 { border-color: #94A3B8; }
+
+/* ============================================
+   TEXT COLOR OVERRIDES FOR LIGHT MODE
+   ============================================ */
+:root:not(.dark) .text-slate-600 { color: #475569; }
+:root:not(.dark) .text-slate-700 { color: #334155; }
+:root:not(.dark) .text-slate-800 { color: #1E293B; }
+:root:not(.dark) .text-slate-900 { color: #0F172A; }
+
+/* Hover states */
+:root:not(.dark) .hover\:text-slate-200:hover { color: #334155; }
+:root:not(.dark) .hover\:text-white:hover { color: #1E293B; }
+
+/* ============================================
+   INPUT OVERRIDES FOR LIGHT MODE
+   ============================================ */
+:root:not(.dark) input[type="text"],
+:root:not(.dark) input[type="number"],
+:root:not(.dark) input[type="url"],
+:root:not(.dark) textarea,
+:root:not(.dark) select {
+  background-color: #F8FAFC;
+  color: #1E293B;
+  border-color: #CBD5E1;
+}
+
+:root:not(.dark) input::placeholder,
+:root:not(.dark) textarea::placeholder {
+  color: #94A3B8;
+}
+
+:root:not(.dark) select option {
+  background-color: #FFFFFF;
+  color: #1E293B;
+}
+
+/* Focus states */
+:root:not(.dark) input:focus,
+:root:not(.dark) textarea:focus,
+:root:not(.dark) select:focus {
+  border-color: #3B82F6;
+  outline: none;
+}
+
+/* ============================================
+   CUSTOM CLASSES
+   ============================================ */
+.glass-card {
+  background: rgba(19, 24, 38, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:root:not(.dark) .glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.glass-card-hover {
+  transition: all 0.2s ease-in-out;
+}
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15);
+}
+
+.gradient-text-blue {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-emerald {
+  background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-amber {
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

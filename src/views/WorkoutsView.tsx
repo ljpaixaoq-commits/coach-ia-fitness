@@ -1,0 +1,483 @@
+import React, { useState } from 'react';
+import { Workout, WorkoutExercise } from '../types';
+import {
+  Dumbbell,
+  Play,
+  CheckCircle2,
+  Circle,
+  Timer,
+  Info,
+  Flame,
+  Plus,
+  Sparkles,
+  Save,
+  Video,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Check
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+interface WorkoutsViewProps {
+  workouts: Workout[];
+  onToggleExercise: (workoutId: string, exerciseId: string) => void;
+  onToggleSet: (workoutId: string, exerciseId: string, setNumber: number) => void;
+  onUpdateWeight: (workoutId: string, exerciseId: string, newWeightKg: number) => void;
+  onUpdateDuration: (workoutId: string, exerciseId: string, newDurationMin: number) => void;
+  onStartRestTimer: (seconds: number) => void;
+  onAskAIForAdaptation: (prompt: string) => void;
+}
+
+export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
+  workouts,
+  onToggleExercise,
+  onToggleSet,
+  onUpdateWeight,
+  onUpdateDuration,
+  onStartRestTimer,
+  onAskAIForAdaptation
+}) => {
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>(
+    workouts[0]?.id || ''
+  );
+  const [activeVideoModal, setActiveVideoModal] = useState<WorkoutExercise | null>(null);
+  const [editingWeightExId, setEditingWeightExId] = useState<string | null>(null);
+  const [tempWeight, setTempWeight] = useState<string>('');
+  const [editingDurationExId, setEditingDurationExId] = useState<string | null>(null);
+  const [tempDuration, setTempDuration] = useState<string>('');
+
+  const currentWorkout = workouts.find((w) => w.id === selectedWorkoutId) || workouts[0];
+
+  const totalExercises = currentWorkout?.exercises?.length || 0;
+  const completedExercises = currentWorkout?.exercises?.filter((e) => e.completed).length || 0;
+  const progressPct = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+
+  const handleSetClick = (workoutId: string, ex: WorkoutExercise, setNumber: number) => {
+    onToggleSet(workoutId, ex.id, setNumber);
+
+    // If this was the last unchecked set, trigger confetti celebratory effect
+    const uncheckedSets = (ex.sets_data || []).filter(s => !s.completed && s.set_number !== setNumber);
+    if (uncheckedSets.length === 0) {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 }
+      });
+    } else {
+      // Start rest timer automatically after a set!
+      if (ex.rest_time_seconds > 0) {
+        onStartRestTimer(ex.rest_time_seconds);
+      }
+    }
+  };
+
+  const handleSaveWeight = (workoutId: string, exerciseId: string) => {
+    const val = parseFloat(tempWeight);
+    if (!isNaN(val) && val >= 0) {
+      onUpdateWeight(workoutId, exerciseId, val);
+      setEditingWeightExId(null);
+    }
+  };
+
+  const handleSaveDuration = (workoutId: string, exerciseId: string) => {
+    const val = parseInt(tempDuration, 10);
+    if (!isNaN(val) && val > 0) {
+      onUpdateDuration(workoutId, exerciseId, val);
+      setEditingDurationExId(null);
+    }
+  };
+
+  const getYoutubeEmbedUrl = (url?: string) => {
+    if (!url) return null;
+    if (url.includes('youtube.com/watch?v=')) {
+      const id = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
+    }
+    if (url.includes('youtu.be/')) {
+      const id = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
+    }
+    return url;
+  };
+
+  return (
+    <div className="space-y-6 pb-16">
+      {/* 1. Header & Workout Selector */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-white tracking-tight flex items-center space-x-2">
+            <Dumbbell className="w-6 h-6 text-blue-400" />
+            <span>Treinos, Séries & Progressão de Carga</span>
+          </h2>
+          <p className="text-xs text-slate-400">
+            Acompanhe série por série, visualize vídeos de execução, registre a evolução de carga e controle o tempo de cardio.
+          </p>
+        </div>
+
+        {/* Workout Tabs / Fichas */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-1 max-w-full">
+          {workouts.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => setSelectedWorkoutId(w.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                selectedWorkoutId === w.id
+                  ? 'bg-blue-600 text-white shadow-glow-blue'
+                  : 'bg-dark-850 hover:bg-dark-800 text-slate-300 border border-slate-800'
+              }`}
+            >
+              {w.title.split(' - ')[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Workout Hero Card */}
+      {currentWorkout && (
+        <div className="glass-card rounded-2xl p-5 lg:p-6 border border-slate-800 relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  {currentWorkout.category}
+                </span>
+                {currentWorkout.ai_generated && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center space-x-1">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Adaptado por IA</span>
+                  </span>
+                )}
+                <span className="text-xs text-slate-400">{currentWorkout.estimated_duration_min} minutos estimados</span>
+              </div>
+              <h3 className="text-xl font-black text-white">{currentWorkout.title}</h3>
+              <p className="text-xs text-slate-400">{currentWorkout.subtitle}</p>
+            </div>
+
+            {/* Progress & AI Action */}
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-xs text-slate-400">Progresso da Sessão</div>
+                <div className="text-lg font-black text-emerald-400">{completedExercises}/{totalExercises} exercícios ({progressPct}%)</div>
+              </div>
+              <button
+                onClick={() => onAskAIForAdaptation(`Estou realizando o ${currentWorkout.title}. Gostaria de sugestão para trocar algum exercício ou ajustar cargas hoje.`)}
+                className="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center space-x-1.5 transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Pedir Ajuste à IA</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full h-2.5 bg-dark-800 rounded-full mt-4 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Exercise List with Sets & Video */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
+          <span>Exercícios da Sessão</span>
+          <span className="text-xs normal-case text-slate-500 font-normal">Toque nas séries para registrar a execução</span>
+        </h4>
+
+        <div className="grid grid-cols-1 gap-4">
+          {currentWorkout?.exercises?.map((ex, idx) => {
+            const isCardio = ex.exercise_type === 'cardio';
+
+            return (
+              <div
+                key={ex.id}
+                className={`p-5 rounded-2xl border transition-all ${
+                  ex.completed
+                    ? 'bg-emerald-950/20 border-emerald-500/40'
+                    : 'bg-dark-850/95 border-slate-800/90 hover:border-slate-700'
+                }`}
+              >
+                {/* Exercise Header */}
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-800/80">
+                  <div className="flex items-start space-x-3">
+                    {/* Checkbox Geral de Exercício */}
+                    <button
+                      onClick={() => onToggleExercise(currentWorkout.id, ex.id)}
+                      className="mt-0.5 text-slate-400 hover:text-emerald-400 transition-colors shrink-0"
+                      title={ex.completed ? 'Marcar exercício como pendente' : 'Concluir todas as séries'}
+                    >
+                      {ex.completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-400 fill-emerald-500/20" />
+                      ) : (
+                        <Circle className="w-6 h-6" />
+                      )}
+                    </button>
+
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500">#{idx + 1}</span>
+                        <h5
+                          className={`text-base font-bold ${
+                            ex.completed ? 'line-through text-slate-400' : 'text-white'
+                          }`}
+                        >
+                          {ex.name}
+                        </h5>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          isCardio ? 'bg-cyan-500/20 text-cyan-300' : 'bg-dark-800 text-slate-300'
+                        }`}>
+                          {ex.muscle_group}
+                        </span>
+                        {ex.completed && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            Finalizado ✔
+                          </span>
+                        )}
+                      </div>
+
+                      {ex.demo_instructions && (
+                        <p className="text-xs text-slate-400 mt-1 italic leading-relaxed">
+                          💡 {ex.demo_instructions}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Video and Rest Timer Buttons */}
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {ex.video_url && (
+                      <button
+                        onClick={() => setActiveVideoModal(ex)}
+                        className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center space-x-1.5 transition-all shadow-glow-violet"
+                        title="Ver vídeo demonstrativo do exercício"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Ver Vídeo</span>
+                      </button>
+                    )}
+
+                    {!isCardio && ex.rest_time_seconds > 0 && (
+                      <button
+                        onClick={() => onStartRestTimer(ex.rest_time_seconds)}
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-xs font-bold flex items-center space-x-1"
+                        title="Iniciar cronômetro de descanso"
+                      >
+                        <Timer className="w-3.5 h-3.5" />
+                        <span>{ex.rest_time_seconds}s</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Body: CARDIO MODE or STRENGTH SET-BY-SET TRACKER */}
+                <div className="pt-3">
+                  {isCardio ? (
+                    // CARDIO TIME MODE
+                    <div className="p-4 rounded-xl bg-dark-900 border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="space-y-1">
+                        <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Exercício Baseado em Tempo</span>
+                        <div className="text-xl font-black text-white">
+                          {ex.duration_minutes || 20} minutos de atividade
+                        </div>
+                        <p className="text-xs text-slate-400">Cardio sem repetições. Ajuste a duração abaixo conforme sua evolução:</p>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        {editingDurationExId === ex.id ? (
+                          <div className="flex items-center space-x-1.5">
+                            <input
+                              type="number"
+                              value={tempDuration}
+                              onChange={(e) => setTempDuration(e.target.value)}
+                              placeholder="minutos"
+                              className="w-20 bg-dark-850 border border-cyan-500 rounded-lg px-2 py-1 text-sm text-white font-bold text-center"
+                            />
+                            <span className="text-xs text-slate-400">min</span>
+                            <button
+                              onClick={() => handleSaveDuration(currentWorkout.id, ex.id)}
+                              className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                              title="Salvar novo tempo de cardio"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingDurationExId(ex.id);
+                              setTempDuration(String(ex.duration_minutes || 20));
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-xs font-bold text-slate-300 border border-slate-700 flex items-center space-x-1"
+                          >
+                            <span>Ajustar Duração</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => onToggleExercise(currentWorkout.id, ex.id)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                            ex.completed
+                              ? 'bg-emerald-600 text-white shadow-glow-emerald'
+                              : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                          }`}
+                        >
+                          {ex.completed ? 'Cardio Concluído ✔' : 'Finalizar Cardio'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // STRENGTH SET-BY-SET TRACKER
+                    <div className="space-y-3">
+                      {/* Evolution of Load / Update Weight for future workouts */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs bg-dark-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400">Carga Padrão Atual:</span>
+                          <span className="text-sm font-black text-blue-400">{ex.default_weight_kg} kg</span>
+                        </div>
+
+                        {editingWeightExId === ex.id ? (
+                          <div className="flex items-center space-x-1.5">
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={tempWeight}
+                              onChange={(e) => setTempWeight(e.target.value)}
+                              placeholder="Nova carga"
+                              className="w-20 bg-dark-850 border border-blue-500 rounded-lg px-2 py-1 text-xs text-white font-bold text-center"
+                            />
+                            <span className="text-slate-400">kg</span>
+                            <button
+                              onClick={() => handleSaveWeight(currentWorkout.id, ex.id)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center space-x-1 hover:bg-emerald-500 shadow-sm"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              <span>Salvar</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingWeightExId(ex.id);
+                              setTempWeight(String(ex.default_weight_kg));
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 text-[11px] font-bold flex items-center space-x-1 border border-slate-700"
+                            title="Evoluir carga para os próximos treinos"
+                          >
+                            <span>📈 Registrar Evolução de Carga</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Interactive Sets Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        {ex.sets_data?.map((set) => (
+                          <button
+                            key={set.set_number}
+                            onClick={() => handleSetClick(currentWorkout.id, ex, set.set_number)}
+                            className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                              set.completed
+                                ? 'bg-emerald-600/25 border-emerald-500 text-white shadow-glow-emerald scale-[1.02]'
+                                : 'bg-dark-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-dark-850'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-1 text-xs font-bold">
+                              <span>Série {set.set_number}</span>
+                              {set.completed && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                            </div>
+                            <div className="text-sm font-black mt-0.5">
+                              {set.weight_kg} kg
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {set.reps_target} reps
+                            </div>
+                            <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              set.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-dark-800 text-slate-400'
+                            }`}>
+                              {set.completed ? 'Concluída' : 'Tocar p/ Concluir'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 4. Video Demonstration Modal */}
+      {activeVideoModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-dark-900 border border-slate-700 rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">{activeVideoModal.muscle_group}</span>
+                <h3 className="text-lg font-black text-white">{activeVideoModal.name}</h3>
+              </div>
+              <button
+                onClick={() => setActiveVideoModal(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-dark-800 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Video Player Embed */}
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 relative">
+              {getYoutubeEmbedUrl(activeVideoModal.video_url) ? (
+                <iframe
+                  src={getYoutubeEmbedUrl(activeVideoModal.video_url)!}
+                  title={activeVideoModal.name}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-xs p-6 text-center space-y-2">
+                  <Video className="w-8 h-8 text-slate-600" />
+                  <span>Vídeo demonstrativo para {activeVideoModal.name}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Instructions */}
+            <div className="p-4 rounded-xl bg-dark-850 border border-slate-800 space-y-1.5 text-xs text-slate-300">
+              <h4 className="font-bold text-white flex items-center space-x-1.5">
+                <Info className="w-4 h-4 text-blue-400" />
+                <span>Instruções de Postura & Execução:</span>
+              </h4>
+              <p className="leading-relaxed">
+                {activeVideoModal.demo_instructions || 'Mantenha a postura alinhada, respiração contínua e controle a fase excêntrica.'}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              {activeVideoModal.video_url && (
+                <a
+                  href={activeVideoModal.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 font-bold text-xs flex items-center justify-center space-x-2 border border-slate-700"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Abrir no YouTube</span>
+                </a>
+              )}
+              <button
+                onClick={() => setActiveVideoModal(null)}
+                className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-glow-violet"
+              >
+                Entendido, voltar ao treino
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
