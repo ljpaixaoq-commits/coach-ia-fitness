@@ -47,18 +47,18 @@ export async function loadAllData(): Promise<AllData | null> {
     goalsRes,
     messagesRes
   ] = await Promise.all([
-    supabase.from('profiles').select('*'),
-    supabase.from('workouts').select('*'),
-    supabase.from('workout_exercises').select('*'),
-    supabase.from('meals').select('*'),
-    supabase.from('meal_items').select('*'),
-    supabase.from('water_logs').select('*'),
-    supabase.from('supplements').select('*'),
-    supabase.from('health_metrics').select('*'),
-    supabase.from('injury_pain_logs').select('*'),
-    supabase.from('evolution_photos').select('*'),
-    supabase.from('goals').select('*'),
-    supabase.from('ai_coach_messages').select('*')
+    supabase.from('perfis').select('*'),
+    supabase.from('treinos').select('*'),
+    supabase.from('treino_exercicios').select('*'),
+    supabase.from('refeicoes').select('*'),
+    supabase.from('refeicao_itens').select('*'),
+    supabase.from('registro_agua').select('*'),
+    supabase.from('suplementos').select('*'),
+    supabase.from('metricas_saude').select('*'),
+    supabase.from('registro_lesoes').select('*'),
+    supabase.from('fotos_evolucao').select('*'),
+    supabase.from('metas').select('*'),
+    supabase.from('coach_mensagens').select('*')
   ]);
 
   if (profilesRes.error) { console.error('Load profiles:', profilesRes.error); return null; }
@@ -210,7 +210,7 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    const { error } = await supabase.from('profiles').upsert(
+    const { error } = await supabase.from('perfis').upsert(
       data.profiles.map(p => ({ ...p })),
       { onConflict: 'id' }
     );
@@ -218,9 +218,9 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
 
     for (const w of data.workouts) {
       const { exercises, ...workoutData } = w;
-      await supabase.from('workouts').upsert(workoutData, { onConflict: 'id' });
+      await supabase.from('treinos').upsert(workoutData, { onConflict: 'id' });
       if (exercises?.length) {
-        await supabase.from('workout_exercises').upsert(
+        await supabase.from('treino_exercicios').upsert(
           exercises.map(ex => ({
             ...ex,
             exercise_type: ex.exercise_type || 'strength'
@@ -232,33 +232,33 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
 
     for (const m of data.meals) {
       const { items, ...mealData } = m;
-      await supabase.from('meals').upsert(mealData, { onConflict: 'id' });
+      await supabase.from('refeicoes').upsert(mealData, { onConflict: 'id' });
       if (items?.length) {
-        await supabase.from('meal_items').upsert(items, { onConflict: 'id' });
+        await supabase.from('refeicao_itens').upsert(items, { onConflict: 'id' });
       }
     }
 
-    await supabase.from('supplements').upsert(data.supplements, { onConflict: 'id' });
-    await supabase.from('goals').upsert(data.goals, { onConflict: 'id' });
+    await supabase.from('suplementos').upsert(data.supplements, { onConflict: 'id' });
+    await supabase.from('metas').upsert(data.goals, { onConflict: 'id' });
 
     if (data.waterLogs.length) {
-      await supabase.from('water_logs').insert(data.waterLogs.map(w => ({
+      await supabase.from('registro_agua').insert(data.waterLogs.map(w => ({
         profile_id: w.profile_id,
         amount_ml: w.amount_ml,
         logged_at: w.logged_at
       })));
     }
     if (data.healthMetrics.length) {
-      await supabase.from('health_metrics').insert(data.healthMetrics);
+      await supabase.from('metricas_saude').insert(data.healthMetrics);
     }
     if (data.injuries.length) {
-      await supabase.from('injury_pain_logs').insert(data.injuries);
+      await supabase.from('registro_lesoes').insert(data.injuries);
     }
     if (data.photos.length) {
-      await supabase.from('evolution_photos').insert(data.photos);
+      await supabase.from('fotos_evolucao').insert(data.photos);
     }
     if (data.messages.length) {
-      await supabase.from('ai_coach_messages').insert(data.messages);
+      await supabase.from('coach_mensagens').insert(data.messages);
     }
 
     return true;
@@ -367,7 +367,7 @@ export async function loginUser(username: string, password: string): Promise<Log
   if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
 
   const { data: account, error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('*')
     .eq('username', cpf)
     .maybeSingle();
@@ -386,14 +386,14 @@ export async function loginUser(username: string, password: string): Promise<Log
   }
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('perfis')
     .select('*')
     .eq('id', account.profile_id)
     .maybeSingle();
 
   if (profileError || !profile) throw new Error('Perfil vinculado não encontrado.');
 
-  await supabase.from('user_accounts').update({ last_login_at: new Date().toISOString() }).eq('id', account.id);
+  await supabase.from('contas_usuario').update({ last_login_at: new Date().toISOString() }).eq('id', account.id);
 
   return { account: { ...account, last_login_at: new Date().toISOString() }, profile };
 }
@@ -415,7 +415,7 @@ export async function registerUser(input: RegisterInput, password: string): Prom
   if (password.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
 
   const { data: existing } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('id')
     .eq('username', cpf)
     .maybeSingle();
@@ -424,7 +424,7 @@ export async function registerUser(input: RegisterInput, password: string): Prom
   const passwordHash = await hashPassword(password);
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('perfis')
     .insert({
       name: input.name.trim(),
       email: input.email || null,
@@ -449,7 +449,7 @@ export async function registerUser(input: RegisterInput, password: string): Prom
 
   if (profileError) throw new Error('Erro ao criar perfil: ' + profileError.message);
 
-  const { error } = await supabase.from('user_accounts').insert({
+  const { error } = await supabase.from('contas_usuario').insert({
     profile_id: profile.id,
     username: cpf,
     password_hash: passwordHash,
@@ -467,7 +467,7 @@ export async function resetPasswordByCpf(cpf: string, birthDate: string, newPass
   if (newPassword.length < 4) throw new Error('A nova senha deve ter ao menos 4 caracteres.');
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('perfis')
     .select('id')
     .eq('cpf', c)
     .eq('birth_date', birthDate)
@@ -477,7 +477,7 @@ export async function resetPasswordByCpf(cpf: string, birthDate: string, newPass
   if (!profile) throw new Error('CPF e data de nascimento não correspondem a nenhum usuário.');
 
   const { data: account } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('id')
     .eq('profile_id', profile.id)
     .maybeSingle();
@@ -487,7 +487,7 @@ export async function resetPasswordByCpf(cpf: string, birthDate: string, newPass
   const passwordHash = await hashPassword(newPassword);
 
   const { error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .update({ password_hash: passwordHash, updated_at: new Date().toISOString() })
     .eq('id', account.id);
 
@@ -500,13 +500,13 @@ export interface UserWithProfile extends UserAccount {
 
 export async function listUsers(): Promise<UserWithProfile[]> {
   const { data: accounts, error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('*')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error('Erro ao listar usuários: ' + error.message);
 
-  const { data: profiles, error: profileError } = await supabase.from('profiles').select('*');
+  const { data: profiles, error: profileError } = await supabase.from('perfis').select('*');
   if (profileError) throw new Error('Erro ao consultar perfis: ' + profileError.message);
 
   const profileMap = new Map<string, Profile>((profiles || []).map((p: Profile) => [p.id, p]));
@@ -519,7 +519,7 @@ export async function listUsers(): Promise<UserWithProfile[]> {
 
 export async function setUserActive(accountId: string, isActive: boolean): Promise<void> {
   const { error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', accountId);
   if (error) throw new Error('Erro ao atualizar usuário: ' + error.message);
@@ -533,7 +533,7 @@ export async function setUserExpiration(accountId: string, expiresAt: string | n
     accessExpiresAt = d.toISOString().split('T')[0];
   }
   const { error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .update({ access_expires_at: accessExpiresAt, access_days: days || null, updated_at: new Date().toISOString() })
     .eq('id', accountId);
   if (error) throw new Error('Erro ao definir expiração: ' + error.message);
@@ -544,24 +544,24 @@ export async function ensureAdminAccount(cpf: string, birthDate: string, passwor
   if (!isSupabaseConfigured()) return;
 
   const { data: existingAccount } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('id')
     .eq('username', c)
     .maybeSingle();
   if (existingAccount) return;
 
-  const { data: profiles } = await supabase.from('profiles').select('*').order('created_at').limit(1);
+  const { data: profiles } = await supabase.from('perfis').select('*').order('created_at').limit(1);
   const adminProfile = (profiles || [])[0];
   if (!adminProfile) return;
 
   await supabase
-    .from('profiles')
+    .from('perfis')
     .update({ cpf: c, birth_date: birthDate })
     .eq('id', adminProfile.id);
 
   const passwordHash = await hashPassword(password);
 
-  await supabase.from('user_accounts').upsert({
+  await supabase.from('contas_usuario').upsert({
     profile_id: adminProfile.id,
     username: c,
     password_hash: passwordHash,
@@ -577,7 +577,7 @@ export async function validateResetIdentity(cpf: string, birthDate: string): Pro
   if (!birthDate) throw new Error('Informe a data de nascimento.');
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('perfis')
     .select('id, name')
     .eq('cpf', c)
     .eq('birth_date', birthDate)
@@ -587,7 +587,7 @@ export async function validateResetIdentity(cpf: string, birthDate: string): Pro
   if (!profile) throw new Error('CPF e data de nascimento não correspondem a nenhum usuário.');
 
   const { data: account } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('id')
     .eq('profile_id', profile.id)
     .maybeSingle();
@@ -606,7 +606,7 @@ export async function registerUserAdmin(input: RegisterInput, password: string):
   if (password.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
 
   const { data: existing } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('id')
     .eq('username', cpf)
     .maybeSingle();
@@ -615,7 +615,7 @@ export async function registerUserAdmin(input: RegisterInput, password: string):
   const passwordHash = await hashPassword(password);
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('perfis')
     .insert({
       name: input.name.trim(),
       email: input.email || null,
@@ -640,7 +640,7 @@ export async function registerUserAdmin(input: RegisterInput, password: string):
 
   if (profileError) throw new Error('Erro ao criar perfil: ' + profileError.message);
 
-  const { error } = await supabase.from('user_accounts').insert({
+  const { error } = await supabase.from('contas_usuario').insert({
     profile_id: profile.id,
     username: cpf,
     password_hash: passwordHash,
@@ -658,7 +658,7 @@ export async function updateUserProfileAdmin(
 ): Promise<void> {
   // Get the profile_id from the account
   const { data: account, error: accError } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .select('profile_id')
     .eq('id', accountId)
     .maybeSingle();
@@ -678,7 +678,7 @@ export async function updateUserProfileAdmin(
     if (!isValidCPF(c)) throw new Error('CPF inválido.');
     // Check if CPF is already used by another account
     const { data: existingProfile } = await supabase
-      .from('profiles')
+      .from('perfis')
       .select('id')
       .eq('cpf', c)
       .maybeSingle();
@@ -687,7 +687,7 @@ export async function updateUserProfileAdmin(
     }
     updates.cpf = c;
     // Also update the username in user_accounts
-    await supabase.from('user_accounts').update({ username: c }).eq('id', accountId);
+    await supabase.from('contas_usuario').update({ username: c }).eq('id', accountId);
   }
 
   if (Object.keys(updates).length === 0) return;
@@ -695,7 +695,7 @@ export async function updateUserProfileAdmin(
   updates.updated_at = new Date().toISOString();
 
   const { error } = await supabase
-    .from('profiles')
+    .from('perfis')
     .update(updates)
     .eq('id', account.profile_id);
 
@@ -707,7 +707,7 @@ export async function updateUserPasswordAdmin(accountId: string, newPassword: st
   if (newPassword.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
   const passwordHash = await hashPassword(newPassword);
   const { error } = await supabase
-    .from('user_accounts')
+    .from('contas_usuario')
     .update({ password_hash: passwordHash, updated_at: new Date().toISOString() })
     .eq('id', accountId);
   if (error) throw new Error('Erro ao atualizar senha: ' + error.message);

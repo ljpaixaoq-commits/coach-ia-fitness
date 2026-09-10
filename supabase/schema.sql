@@ -1,11 +1,12 @@
 -- ==============================================================================
 -- COACH IA PESSOAL - SCHEMA COMPLETO SUPABASE (POSTGRESQL)
+-- Nomenclatura das tabelas em português
 -- ==============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. TABELA DE PERFIS DE USUÁRIOS (Suporte a Família / Múltiplos Perfis)
-CREATE TABLE IF NOT EXISTS profiles (
+-- 1. PERFIS DE USUÁRIOS (Suporte a Família / Múltiplos Perfis)
+CREATE TABLE IF NOT EXISTS perfis (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     nickname TEXT,
@@ -34,10 +35,10 @@ CREATE TABLE IF NOT EXISTS profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. TABELA DE CONTAS DE USUÁRIO (Login/Acesso - separada dos dados pessoais)
-CREATE TABLE IF NOT EXISTS user_accounts (
+-- 2. CONTAS DE USUÁRIO (Login/Acesso - separada dos dados pessoais)
+CREATE TABLE IF NOT EXISTS contas_usuario (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL UNIQUE REFERENCES perfis(id) ON DELETE CASCADE,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'member', -- 'admin', 'member'
@@ -49,10 +50,10 @@ CREATE TABLE IF NOT EXISTS user_accounts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. TABELA DE TREINOS (Fichas / Planos de Treino)
-CREATE TABLE IF NOT EXISTS workouts (
+-- 3. TREINOS (Fichas / Planos de Treino)
+CREATE TABLE IF NOT EXISTS treinos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     subtitle TEXT,
     category TEXT NOT NULL, -- 'Push', 'Pull', 'Legs', 'Full Body', 'Cardio', 'Upper', 'Lower'
@@ -65,10 +66,10 @@ CREATE TABLE IF NOT EXISTS workouts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. TABELA DE EXERCÍCIOS DO TREINO
-CREATE TABLE IF NOT EXISTS workout_exercises (
+-- 4. EXERCÍCIOS DE CADA TREINO
+CREATE TABLE IF NOT EXISTS treino_exercicios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    workout_id UUID NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
+    workout_id UUID NOT NULL REFERENCES treinos(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     muscle_group TEXT NOT NULL,
     sets INTEGER NOT NULL DEFAULT 4,
@@ -76,16 +77,17 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     default_weight_kg NUMERIC(6,2) DEFAULT 0,
     rest_time_seconds INTEGER DEFAULT 90,
     video_gif_url TEXT,
+    video_url TEXT, -- link do vídeo de demonstração (YouTube ou próprio)
     demo_instructions TEXT,
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. TABELA DE HISTÓRICO DE TREINOS REALIZADOS
-CREATE TABLE IF NOT EXISTS workout_logs (
+-- 5. HISTÓRICO DE TREINOS REALIZADOS
+CREATE TABLE IF NOT EXISTS registro_treinos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    workout_id UUID REFERENCES workouts(id) ON DELETE SET NULL,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    workout_id UUID REFERENCES treinos(id) ON DELETE SET NULL,
     workout_title TEXT NOT NULL,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE,
@@ -98,10 +100,10 @@ CREATE TABLE IF NOT EXISTS workout_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. TABELA DE SÉRIES DETALHADAS DO HISTÓRICO DE TREINO
-CREATE TABLE IF NOT EXISTS workout_log_sets (
+-- 6. SÉRIES DETALHADAS DO HISTÓRICO DE TREINO
+CREATE TABLE IF NOT EXISTS registro_treino_series (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    workout_log_id UUID NOT NULL REFERENCES workout_logs(id) ON DELETE CASCADE,
+    workout_log_id UUID NOT NULL REFERENCES registro_treinos(id) ON DELETE CASCADE,
     exercise_name TEXT NOT NULL,
     set_number INTEGER NOT NULL,
     reps_completed INTEGER NOT NULL,
@@ -111,10 +113,10 @@ CREATE TABLE IF NOT EXISTS workout_log_sets (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. TABELA DE ALIMENTAÇÃO (Refeições Diárias)
-CREATE TABLE IF NOT EXISTS meals (
+-- 7. ALIMENTAÇÃO (Refeições Diárias)
+CREATE TABLE IF NOT EXISTS refeicoes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     meal_type TEXT NOT NULL, -- 'breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'
     title TEXT NOT NULL,
     consumed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -126,10 +128,10 @@ CREATE TABLE IF NOT EXISTS meals (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. TABELA DE ITENS DE CADA REFEIÇÃO
-CREATE TABLE IF NOT EXISTS meal_items (
+-- 8. ITENS DE CADA REFEIÇÃO
+CREATE TABLE IF NOT EXISTS refeicao_itens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    meal_id UUID NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
+    meal_id UUID NOT NULL REFERENCES refeicoes(id) ON DELETE CASCADE,
     food_name TEXT NOT NULL,
     portion_g NUMERIC(6,1) NOT NULL,
     calories INTEGER NOT NULL,
@@ -139,18 +141,18 @@ CREATE TABLE IF NOT EXISTS meal_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. TABELA DE INGESTÃO DE ÁGUA
-CREATE TABLE IF NOT EXISTS water_logs (
+-- 9. INGESTÃO DE ÁGUA
+CREATE TABLE IF NOT EXISTS registro_agua (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     amount_ml INTEGER NOT NULL,
     logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 9. TABELA DE SUPLEMENTOS & MISTURA PERSONALIZADA
-CREATE TABLE IF NOT EXISTS supplements (
+-- 10. SUPLEMENTOS & MISTURA PERSONALIZADA
+CREATE TABLE IF NOT EXISTS suplementos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     is_custom_blend BOOLEAN DEFAULT FALSE,
     dosage TEXT NOT NULL,
@@ -164,19 +166,19 @@ CREATE TABLE IF NOT EXISTS supplements (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 10. TABELA DE CONSUMO DE SUPLEMENTOS (HISTÓRICO)
-CREATE TABLE IF NOT EXISTS supplement_intakes (
+-- 11. CONSUMO DE SUPLEMENTOS (HISTÓRICO)
+CREATE TABLE IF NOT EXISTS suplemento_consumos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    supplement_id UUID NOT NULL REFERENCES supplements(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
+    supplement_id UUID NOT NULL REFERENCES suplementos(id) ON DELETE CASCADE,
     taken_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     notes TEXT
 );
 
--- 11. TABELA DE SAÚDE & MÉTRICAS CLÍNICAS
-CREATE TABLE IF NOT EXISTS health_metrics (
+-- 12. SAÚDE & MÉTRICAS CLÍNICAS
+CREATE TABLE IF NOT EXISTS metricas_saude (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     measured_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     weight_kg NUMERIC(5,2),
     bmi NUMERIC(4,1),
@@ -201,10 +203,10 @@ CREATE TABLE IF NOT EXISTS health_metrics (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 12. TABELA DE LESÕES, DORES E HISTÓRICO CLÍNICO (Ex: Joelho Direito)
-CREATE TABLE IF NOT EXISTS injury_pain_logs (
+-- 13. LESÕES, DORES E HISTÓRICO CLÍNICO (Ex: Joelho Direito)
+CREATE TABLE IF NOT EXISTS registro_lesoes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     body_part TEXT NOT NULL,
     pain_level INTEGER NOT NULL CHECK (pain_level >= 0 AND pain_level <= 10),
     status TEXT DEFAULT 'monitoring',
@@ -216,10 +218,10 @@ CREATE TABLE IF NOT EXISTS injury_pain_logs (
     logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 13. TABELA DE FOTOS DE EVOLUÇÃO FÍSICA
-CREATE TABLE IF NOT EXISTS evolution_photos (
+-- 14. FOTOS DE EVOLUÇÃO FÍSICA
+CREATE TABLE IF NOT EXISTS fotos_evolucao (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     photo_type TEXT NOT NULL,
     photo_url TEXT NOT NULL,
     weight_kg NUMERIC(5,2),
@@ -229,10 +231,10 @@ CREATE TABLE IF NOT EXISTS evolution_photos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 14. TABELA DE METAS E HÁBITOS
-CREATE TABLE IF NOT EXISTS goals (
+-- 15. METAS E HÁBITOS
+CREATE TABLE IF NOT EXISTS metas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     category TEXT NOT NULL,
     current_value NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -243,10 +245,10 @@ CREATE TABLE IF NOT EXISTS goals (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 15. TABELA DE INTERAÇÕES COM O COACH IA (Chat & Recomendações)
-CREATE TABLE IF NOT EXISTS ai_coach_messages (
+-- 16. INTERAÇÕES COM O COACH IA (Chat & Recomendações)
+CREATE TABLE IF NOT EXISTS coach_mensagens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     sender TEXT NOT NULL,
     message TEXT NOT NULL,
     intent_type TEXT,
@@ -254,10 +256,10 @@ CREATE TABLE IF NOT EXISTS ai_coach_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 16. TABELA DE RESUMOS INTELIGENTES DO DIA
-CREATE TABLE IF NOT EXISTS ai_daily_summaries (
+-- 17. RESUMOS INTELIGENTES DO DIA
+CREATE TABLE IF NOT EXISTS coach_resumos_diarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES perfis(id) ON DELETE CASCADE,
     summary_date DATE NOT NULL DEFAULT CURRENT_DATE,
     greeting TEXT NOT NULL,
     sleep_summary TEXT,
@@ -269,54 +271,54 @@ CREATE TABLE IF NOT EXISTS ai_daily_summaries (
     goal_milestone_progress TEXT,
     full_markdown TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT unique_profile_daily_summary UNIQUE (profile_id, summary_date)
+    CONSTRAINT unico_resumo_perfil_dia UNIQUE (profile_id, summary_date)
 );
 
 -- ÍNDICES
-CREATE INDEX IF NOT EXISTS idx_workouts_profile ON workouts(profile_id);
-CREATE INDEX IF NOT EXISTS idx_workout_logs_profile ON workout_logs(profile_id);
-CREATE INDEX IF NOT EXISTS idx_meals_profile_date ON meals(profile_id, consumed_at);
-CREATE INDEX IF NOT EXISTS idx_water_profile_date ON water_logs(profile_id, logged_at);
-CREATE INDEX IF NOT EXISTS idx_health_profile_date ON health_metrics(profile_id, measured_at);
-CREATE INDEX IF NOT EXISTS idx_injuries_profile ON injury_pain_logs(profile_id);
-CREATE INDEX IF NOT EXISTS idx_photos_profile ON evolution_photos(profile_id);
-CREATE INDEX IF NOT EXISTS idx_goals_profile ON goals(profile_id);
-CREATE INDEX IF NOT EXISTS idx_ai_messages_profile ON ai_coach_messages(profile_id);
+CREATE INDEX IF NOT EXISTS idx_treinos_perfil ON treinos(profile_id);
+CREATE INDEX IF NOT EXISTS idx_registro_treinos_perfil ON registro_treinos(profile_id);
+CREATE INDEX IF NOT EXISTS idx_refeicoes_perfil_data ON refeicoes(profile_id, consumed_at);
+CREATE INDEX IF NOT EXISTS idx_agua_perfil_data ON registro_agua(profile_id, logged_at);
+CREATE INDEX IF NOT EXISTS idx_saude_perfil_data ON metricas_saude(profile_id, measured_at);
+CREATE INDEX IF NOT EXISTS idx_lesoes_perfil ON registro_lesoes(profile_id);
+CREATE INDEX IF NOT EXISTS idx_fotos_perfil ON fotos_evolucao(profile_id);
+CREATE INDEX IF NOT EXISTS idx_metas_perfil ON metas(profile_id);
+CREATE INDEX IF NOT EXISTS idx_coach_mensagens_perfil ON coach_mensagens(profile_id);
 
 -- RLS
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workout_exercises ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workout_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workout_log_sets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meal_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE supplements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE supplement_intakes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE health_metrics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE injury_pain_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE evolution_photos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_coach_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_daily_summaries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE perfis ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contas_usuario ENABLE ROW LEVEL SECURITY;
+ALTER TABLE treinos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE treino_exercicios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE registro_treinos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE registro_treino_series ENABLE ROW LEVEL SECURITY;
+ALTER TABLE refeicoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE refeicao_itens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE registro_agua ENABLE ROW LEVEL SECURITY;
+ALTER TABLE suplementos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE suplemento_consumos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE metricas_saude ENABLE ROW LEVEL SECURITY;
+ALTER TABLE registro_lesoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fotos_evolucao ENABLE ROW LEVEL SECURITY;
+ALTER TABLE metas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coach_mensagens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coach_resumos_diarios ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all read-write for user_accounts" ON user_accounts FOR ALL USING (true);
+CREATE POLICY "Permitir acesso total contas_usuario" ON contas_usuario FOR ALL USING (true);
 
-CREATE POLICY "Allow public read-write for profiles" ON profiles FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for workouts" ON workouts FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for workout_exercises" ON workout_exercises FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for workout_logs" ON workout_logs FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for workout_log_sets" ON workout_log_sets FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for meals" ON meals FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for meal_items" ON meal_items FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for water_logs" ON water_logs FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for supplements" ON supplements FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for supplement_intakes" ON supplement_intakes FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for health_metrics" ON health_metrics FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for injury_pain_logs" ON injury_pain_logs FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for evolution_photos" ON evolution_photos FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for goals" ON goals FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for ai_coach_messages" ON ai_coach_messages FOR ALL USING (true);
-CREATE POLICY "Allow public read-write for ai_daily_summaries" ON ai_daily_summaries FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico perfis" ON perfis FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico treinos" ON treinos FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico treino_exercicios" ON treino_exercicios FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico registro_treinos" ON registro_treinos FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico registro_treino_series" ON registro_treino_series FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico refeicoes" ON refeicoes FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico refeicao_itens" ON refeicao_itens FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico registro_agua" ON registro_agua FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico suplementos" ON suplementos FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico suplemento_consumos" ON suplemento_consumos FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico metricas_saude" ON metricas_saude FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico registro_lesoes" ON registro_lesoes FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico fotos_evolucao" ON fotos_evolucao FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico metas" ON metas FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico coach_mensagens" ON coach_mensagens FOR ALL USING (true);
+CREATE POLICY "Permitir acesso publico coach_resumos_diarios" ON coach_resumos_diarios FOR ALL USING (true);
