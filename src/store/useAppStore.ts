@@ -23,7 +23,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, WorkoutGoal } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -37,6 +37,8 @@ import {
   syncPhoto,
   syncGoal,
   syncMessage,
+  syncWorkout,
+  syncWorkoutExercise,
   loginUser,
   registerUser,
   resetPasswordByCpf,
@@ -44,6 +46,10 @@ import {
   setUserActive,
   setUserExpiration,
   ensureAdminAccount,
+  validateResetIdentity,
+  registerUserAdmin,
+  updateUserProfileAdmin,
+  updateUserPasswordAdmin,
   UserWithProfile,
   RegisterInput
 } from '../lib/db';
@@ -152,6 +158,48 @@ export function useAppStore() {
       await loadAdminUsers();
     } catch (e: any) {
       setAuthError(e.message);
+    }
+  };
+
+  const validateReset = async (cpf: string, birthDate: string) => {
+    setAuthError(null);
+    try {
+      return await validateResetIdentity(cpf, birthDate);
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    }
+  };
+
+  const registerUserAsAdmin = async (input: RegisterInput, password: string) => {
+    setAuthError(null);
+    try {
+      await registerUserAdmin(input, password);
+      await loadAdminUsers();
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    }
+  };
+
+  const updateUserProfile = async (accountId: string, data: { name?: string; cpf?: string; birth_date?: string; email?: string; gender?: string }) => {
+    setAuthError(null);
+    try {
+      await updateUserProfileAdmin(accountId, data);
+      await loadAdminUsers();
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
+    }
+  };
+
+  const updateUserPassword = async (accountId: string, newPassword: string) => {
+    setAuthError(null);
+    try {
+      await updateUserPasswordAdmin(accountId, newPassword);
+    } catch (e: any) {
+      setAuthError(e.message);
+      throw e;
     }
   };
 
@@ -670,6 +718,36 @@ export function useAppStore() {
     }, 600);
   };
 
+  // AI Workout Generation
+  const generateAndSaveWorkout = async (goal: WorkoutGoal): Promise<Workout> => {
+    const result = generateWorkout(goal, activeProfile);
+    const workoutId = `wkt-ai-${Date.now()}`;
+    const newWorkout: Workout = {
+      ...result.workout,
+      id: workoutId,
+      profile_id: activeProfile.id,
+      exercises: result.exercises.map(ex => ({ ...ex, workout_id: workoutId }))
+    };
+
+    setWorkouts(prev => [newWorkout, ...prev]);
+    syncWorkout(newWorkout);
+    newWorkout.exercises?.forEach(ex => syncWorkoutExercise(ex));
+
+    // Post AI message describing the new workout
+    const aiMsg: AICoachMessage = {
+      id: `msg-ai-${Date.now()}`,
+      profile_id: activeProfile.id,
+      sender: 'ai',
+      message: `✅ **Treino gerado com sucesso!**\n\n${result.description}`,
+      intent_type: 'general',
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, aiMsg]);
+    syncMessage(aiMsg);
+
+    return newWorkout;
+  };
+
   return {
     dbConnected,
     currentUser,
@@ -684,6 +762,10 @@ export function useAppStore() {
     loadAdminUsers,
     toggleUserActive,
     updateUserExpiration,
+    validateReset,
+    registerUserAsAdmin,
+    updateUserProfile,
+    updateUserPassword,
     theme,
     toggleTheme,
     activeTab,
@@ -729,6 +811,7 @@ export function useAppStore() {
     addGoal,
     messages: userMessages,
     sendAICoachMessage,
+    generateAndSaveWorkout,
     smartDailySummary
   };
 }

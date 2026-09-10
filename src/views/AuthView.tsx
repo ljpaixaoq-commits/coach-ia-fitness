@@ -12,16 +12,19 @@ interface AuthViewProps {
     gender?: string;
   }, password: string) => Promise<void>;
   onResetPassword: (cpf: string, birthDate: string, newPassword: string) => Promise<void>;
+  onValidateReset?: (cpf: string, birthDate: string) => Promise<{ account_id: string; profile_name: string }>;
   authBusy: boolean;
   authError: string | null;
 }
 
 type Mode = 'login' | 'register' | 'reset';
+type ResetStep = 'identity' | 'new_password';
 
 export const AuthView: React.FC<AuthViewProps> = ({
   onLogin,
   onRegister,
   onResetPassword,
+  onValidateReset,
   authBusy,
   authError
 }) => {
@@ -34,6 +37,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [birthDate, setBirthDate] = useState('');
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Reset flow state
+  const [resetStep, setResetStep] = useState<ResetStep>('identity');
+  const [resetAccountId, setResetAccountId] = useState<string | null>(null);
+  const [resetUserName, setResetUserName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,15 +79,32 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
 
     if (mode === 'reset') {
-      if (password !== confirmPassword) {
+      if (resetStep === 'identity') {
+        // Step 1: Validate CPF + birth date
+        if (!onValidateReset) return;
+        setPending(true);
+        try {
+          const result = await onValidateReset(username, birthDate);
+          setResetAccountId(result.account_id);
+          setResetUserName(result.profile_name);
+          setResetStep('new_password');
+        } catch (err) {
+          // error already set in store
+        } finally {
+          setPending(false);
+        }
         return;
       }
+
+      // Step 2: Set new password
+      if (password !== confirmPassword) return;
       setPending(true);
       try {
         await onResetPassword(username, birthDate, password);
         setSuccess('Senha redefinida com sucesso! Faça login com a nova senha.');
         setMode('login');
         setPassword(''); setConfirmPassword(''); setBirthDate(''); setUsername('');
+        setResetStep('identity'); setResetAccountId(null); setResetUserName('');
       } catch (err) {
         // error already set in store
       } finally {
@@ -93,6 +118,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccess(null);
     setPassword('');
     setConfirmPassword('');
+    setResetStep('identity');
+    setResetAccountId(null);
+    setResetUserName('');
   };
 
   const inputClass = "w-full bg-dark-850 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
@@ -123,7 +151,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </button>
             )}
             <span className="text-content-muted uppercase tracking-wider">
-              {mode === 'login' ? 'Acesso à plataforma' : mode === 'register' ? 'Criar nova conta' : 'Redefinir senha'}
+              {mode === 'login' ? 'Acesso à plataforma' : mode === 'register' ? 'Criar nova conta' : resetStep === 'identity' ? 'Validar identidade' : 'Criar nova senha'}
             </span>
           </div>
 
@@ -142,6 +170,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* CPF field - always visible */}
             <div className="relative">
               <User className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
               <input
@@ -151,9 +180,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 value={username}
                 onChange={(e) => setUsername(formatCPF(e.target.value))}
                 placeholder="CPF (somente números)"
+                disabled={mode === 'reset' && resetStep === 'new_password'}
               />
             </div>
 
+            {/* Register fields */}
             {mode === 'register' && (
               <>
                 <input
@@ -174,7 +205,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </>
             )}
 
-            {mode === 'reset' && (
+            {/* Reset: Birth date - only in identity step */}
+            {mode === 'reset' && resetStep === 'identity' && (
               <div className="relative">
                 <CalendarDays className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
                 <input
@@ -188,32 +220,82 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </div>
             )}
 
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
-              <input
-                className={inputClass + " pl-10"}
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'register' ? 'Crie uma senha (min. 4 caracteres)' : mode === 'reset' ? 'Nova senha (min. 4 caracteres)' : 'Senha'}
-                minLength={4}
-              />
-            </div>
-
-            {mode !== 'login' && (
+            {/* Password fields - login, register, and reset new_password step */}
+            {mode === 'login' && (
               <div className="relative">
-                <KeyRound className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
                 <input
                   className={inputClass + " pl-10"}
                   type="password"
                   required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirmar senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Senha"
                   minLength={4}
                 />
               </div>
+            )}
+
+            {mode === 'register' && (
+              <>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Crie uma senha (min. 4 caracteres)"
+                    minLength={4}
+                  />
+                </div>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmar senha"
+                    minLength={4}
+                  />
+                </div>
+              </>
+            )}
+
+            {mode === 'reset' && resetStep === 'new_password' && (
+              <>
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+                  Identidade validada! Olá, <strong>{resetUserName}</strong>. Defina sua nova senha abaixo.
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Nova senha (min. 4 caracteres)"
+                    minLength={4}
+                    autoFocus
+                  />
+                </div>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmar nova senha"
+                    minLength={4}
+                  />
+                </div>
+              </>
             )}
 
             {password !== confirmPassword && confirmPassword && mode !== 'login' && (
@@ -222,7 +304,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
             <button
               type="submit"
-              disabled={authBusy || pending || (mode !== 'login' && password !== confirmPassword)}
+              disabled={authBusy || pending || (mode !== 'login' && mode === 'register' && password !== confirmPassword) || (mode === 'reset' && resetStep === 'new_password' && password !== confirmPassword)}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm flex items-center justify-center space-x-2 transition-all shadow-glow-blue disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {authBusy || pending ? (
@@ -232,7 +314,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </>
               ) : (
                 <span>
-                  {mode === 'login' ? 'Entrar' : mode === 'register' ? 'Solicitar cadastro' : 'Redefinir senha'}
+                  {mode === 'login' ? 'Entrar' : mode === 'register' ? 'Solicitar cadastro' : resetStep === 'identity' ? 'Validar identidade' : 'Redefinir senha'}
                 </span>
               )}
             </button>
@@ -252,7 +334,11 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </>
             ) : (
               <span className="text-xs text-center">
-                {mode === 'register' ? 'Novos usuários iniciam aguardando aprovação do administrador.' : 'Informe o CPF e a data de nascimento corretos para criar uma nova senha.'}
+                {mode === 'register'
+                  ? 'Novos usuários iniciam como inativos, aguardando aprovação do administrador.'
+                  : resetStep === 'identity'
+                  ? 'Informe o CPF e a data de nascimento corretos para validar sua identidade.'
+                  : 'Crie uma nova senha para acessar sua conta.'}
               </span>
             )}
           </div>

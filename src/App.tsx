@@ -51,6 +51,7 @@ export function App() {
         onLogin={store.login}
         onRegister={store.register}
         onResetPassword={store.resetPassword}
+        onValidateReset={store.validateReset}
         authBusy={store.authBusy}
         authError={store.authError}
       />
@@ -128,6 +129,7 @@ export function App() {
               todayWorkout={store.workouts[0]}
               injuries={store.injuries}
               onSendMessage={store.sendAICoachMessage}
+              onGenerateWorkout={store.generateAndSaveWorkout}
               onNavigateTab={(tab) => store.setActiveTab(tab as NavTab)}
             />
           )}
@@ -206,6 +208,9 @@ export function App() {
               onLoad={store.loadAdminUsers}
               onToggleActive={store.toggleUserActive}
               onSetExpiration={store.updateUserExpiration}
+              onCreateUser={store.registerUserAsAdmin}
+              onUpdateUser={store.updateUserProfile}
+              onUpdatePassword={store.updateUserPassword}
               error={store.authError}
             />
           )}

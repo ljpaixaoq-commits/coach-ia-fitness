@@ -1,4 +1,4 @@
-import { Profile, Workout, InjuryPainLog, HealthMetric, AIDailySummary } from '../types';
+import { Profile, Workout, WorkoutExercise, InjuryPainLog, HealthMetric, AIDailySummary } from '../types';
 
 export function getDynamicGreeting(name: string): { greeting: string; period: string } {
   const hour = new Date().getHours();
@@ -157,5 +157,178 @@ export function processAICoachPrompt(
       { action: 'start_workout', label: '🏋️ Iniciar Treino de Hoje', details: 'Abrir ficha e cronômetro de descanso.' },
       { action: 'view_summary', label: '📊 Ver Resumo Inteligente do Dia', details: 'Visão detalhada das métricas de hoje.' }
     ]
+  };
+}
+
+// ── Workout Generator ──────────────────────────────────────────
+
+export interface WorkoutGoal {
+  objective: 'lose_weight' | 'hypertrophy' | 'endurance' | 'health';
+  limitations: string[];
+  daysPerWeek: number;
+  sessionMinutes: number;
+  experience: 'beginner' | 'intermediate' | 'advanced';
+}
+
+const EXERCISE_DB: Record<string, { name: string; muscle: string; type: 'strength' | 'cardio' | 'isometric'; sets: number; reps: string; rest: number; kneeSafe: boolean }[]> = {
+  chest: [
+    { name: 'Supino Reto com Barra', muscle: 'Peito', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
+    { name: 'Supino Inclinado com Halteres', muscle: 'Peito', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true },
+    { name: 'Crucifixo na Máquina', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Crossover', muscle: 'Peito', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Flexão de Braços', muscle: 'Peito', type: 'strength', sets: 3, reps: '10-15', rest: 60, kneeSafe: true }
+  ],
+  back: [
+    { name: 'Puxada Frontal', muscle: 'Costas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: true },
+    { name: 'Remada Curvada', muscle: 'Costas', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
+    { name: 'Remada Unilateral', muscle: 'Costas', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
+    { name: 'Pulldown', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Encolhimento (Trapézio)', muscle: 'Costas', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+  ],
+  shoulders: [
+    { name: 'Desenvolvimento com Halteres', muscle: 'Ombros', type: 'strength', sets: 4, reps: '8-12', rest: 90, kneeSafe: true },
+    { name: 'Elevação Lateral', muscle: 'Ombros', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Elevação Frontal', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Face Pull', muscle: 'Ombros', type: 'strength', sets: 3, reps: '15-20', rest: 60, kneeSafe: true },
+    { name: 'Crucifixo Inverso', muscle: 'Ombros', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+  ],
+  legs: [
+    { name: 'Agachamento Livre', muscle: 'Pernas', type: 'strength', sets: 4, reps: '8-12', rest: 120, kneeSafe: false },
+    { name: 'Leg Press 45°', muscle: 'Pernas', type: 'strength', sets: 4, reps: '10-12', rest: 90, kneeSafe: false },
+    { name: 'Cadeira Extensora', muscle: 'Quadríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Mesa Flexora', muscle: 'Posterior', type: 'strength', sets: 4, reps: '10-12', rest: 60, kneeSafe: true },
+    { name: 'Panturrilha em Pé', muscle: 'Panturrilha', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true },
+    { name: 'Elevação Pélvica', muscle: 'Glúteos', type: 'strength', sets: 4, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Isometria de Quadríceps', muscle: 'Quadríceps', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true },
+    { name: 'Avanço com Halteres', muscle: 'Pernas', type: 'strength', sets: 3, reps: '10 cada', rest: 60, kneeSafe: false }
+  ],
+  arms: [
+    { name: 'Rosca Direta com Barra', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
+    { name: 'Rosca Alternada', muscle: 'Bíceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
+    { name: 'Tríceps Pulley', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true },
+    { name: 'Tríceps Testa', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '10-12', rest: 60, kneeSafe: true },
+    { name: 'Mergulho entre Bancos', muscle: 'Tríceps', type: 'strength', sets: 3, reps: '12-15', rest: 60, kneeSafe: true }
+  ],
+  core: [
+    { name: 'Prancha Frontal', muscle: 'Core', type: 'isometric', sets: 3, reps: '45s', rest: 45, kneeSafe: true },
+    { name: 'Abdominal Crunch', muscle: 'Core', type: 'strength', sets: 4, reps: '15-20', rest: 45, kneeSafe: true },
+    { name: 'Elevação de Pernas', muscle: 'Core', type: 'strength', sets: 3, reps: '12-15', rest: 45, kneeSafe: true },
+    { name: 'Russian Twist', muscle: 'Core', type: 'strength', sets: 3, reps: '20 total', rest: 45, kneeSafe: true },
+    { name: 'Prancha Lateral', muscle: 'Core', type: 'isometric', sets: 3, reps: '30s cada', rest: 45, kneeSafe: true }
+  ],
+  cardio: [
+    { name: 'Esteira (Caminhada/Rotação)', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '20 min', rest: 0, kneeSafe: false },
+    { name: 'Bicicleta Ergométrica', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: true },
+    { name: 'Elíptico', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '15 min', rest: 0, kneeSafe: false },
+    { name: 'Remador', muscle: 'Cardio', type: 'cardio', sets: 1, reps: '10 min', rest: 0, kneeSafe: true }
+  ]
+};
+
+function buildExercises(groups: string[], limitations: string[], experience: 'beginner' | 'intermediate' | 'advanced', sessionMinutes: number): WorkoutExercise[] {
+  const hasKneeIssue = limitations.some(l => l.toLowerCase().includes('joelho') || l.toLowerCase().includes('knee'));
+  const hasBackIssue = limitations.some(l => l.toLowerCase().includes('coluna') || l.toLowerCase().includes('costa') || l.toLowerCase().includes('lombar'));
+
+  const setsMultiplier = experience === 'beginner' ? 0.75 : experience === 'advanced' ? 1.25 : 1;
+
+  const exercises: WorkoutExercise[] = [];
+  let order = 0;
+
+  for (const group of groups) {
+    const pool = EXERCISE_DB[group] || [];
+    const filtered = pool.filter(ex => {
+      if (hasKneeIssue && !ex.kneeSafe) return false;
+      if (hasBackIssue && (ex.name.includes('Curvada') || ex.name.includes('Remada Curvada'))) return false;
+      return true;
+    });
+
+    const count = group === 'cardio' ? 1 : experience === 'beginner' ? 2 : 3;
+    const selected = filtered.slice(0, count);
+
+    for (const ex of selected) {
+      const sets = Math.round(ex.sets * setsMultiplier);
+      exercises.push({
+        id: `ex-ai-${Date.now()}-${order}`,
+        workout_id: '',
+        name: ex.name,
+        muscle_group: ex.muscle,
+        exercise_type: ex.type,
+        sets,
+        reps_target: ex.reps,
+        default_weight_kg: 0,
+        duration_minutes: ex.type === 'cardio' ? parseInt(ex.reps) || 15 : undefined,
+        rest_time_seconds: ex.rest,
+        order_index: order++,
+        completed: false,
+        sets_data: Array.from({ length: sets }, (_, i) => ({
+          set_number: i + 1,
+          reps_target: ex.reps,
+          weight_kg: 0,
+          completed: false
+        }))
+      });
+    }
+  }
+
+  return exercises;
+}
+
+export function generateWorkout(goal: WorkoutGoal, profile: Profile): { workout: Omit<Workout, 'id'>; exercises: WorkoutExercise[]; description: string } {
+  const groupMap: Record<string, string[][]> = {
+    2: [['chest', 'back'], ['legs', 'core']],
+    3: [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
+    4: [['chest', 'arms'], ['back', 'shoulders'], ['legs', 'core'], ['cardio', 'core']],
+    5: [['chest', 'core'], ['back', 'arms'], ['legs'], ['shoulders', 'core'], ['cardio', 'arms']],
+    6: [['chest'], ['back'], ['legs'], ['shoulders', 'arms'], ['legs', 'core'], ['cardio', 'core']]
+  };
+
+  const daysToUse = Math.max(2, Math.min(6, goal.daysPerWeek));
+  const dayGroups = groupMap[daysToUse] || groupMap[3];
+
+  const categoryMap: Record<string, string> = {
+    chest: 'Push', back: 'Pull', shoulders: 'Push', legs: 'Legs', arms: 'Pull', core: 'Full Body', cardio: 'Cardio'
+  };
+
+  const objectiveNames: Record<string, string> = {
+    lose_weight: 'Emagrecimento',
+    hypertrophy: 'Hipertrofia',
+    endurance: 'Resistência',
+    health: 'Saúde'
+  };
+
+  const diffNames: Record<string, string> = {
+    beginner: 'Iniciante',
+    intermediate: 'Intermediário',
+    advanced: 'Avançado'
+  };
+
+  const primaryGroups = dayGroups[0] || ['chest'];
+  const category = (categoryMap[primaryGroups[0]] || 'Full Body') as any;
+
+  const exercises = buildExercises(primaryGroups, goal.limitations, goal.experience, goal.sessionMinutes);
+
+  const totalExercises = exercises.length;
+  const estimatedDuration = exercises.reduce((acc, ex) => acc + (ex.sets * 3) + (ex.rest_time_seconds / 60), 0);
+
+  const limitationsText = goal.limitations.length > 0
+    ? `\n\n**Restrições consideradas:** ${goal.limitations.join(', ')}`
+    : '';
+
+  const description = `Treino gerado automaticamente pelo Coach IA.\n\n**Objetivo:** ${objectiveNames[goal.objective]}\n**Nível:** ${diffNames[goal.experience]}\n**Frequência:** ${daysToUse}x por semana\n**Sessão:** ~${Math.round(estimatedDuration)} min${limitationsText}\n\n**Exercícios (${totalExercises}):**\n${exercises.map((ex, i) => `${i + 1}. ${ex.name} (${ex.sets}x${ex.reps_target})`).join('\n')}`;
+
+  return {
+    workout: {
+      profile_id: profile.id,
+      title: `Treino ${objectiveNames[goal.objective]} - ${diffNames[goal.experience]}`,
+      subtitle: `${daysToUse}x por semana · ~${Math.round(estimatedDuration)} min`,
+      category,
+      day_of_week: [],
+      estimated_duration_min: Math.round(estimatedDuration),
+      difficulty: goal.experience === 'beginner' ? 'iniciante' : goal.experience === 'advanced' ? 'avancado' : 'intermediary',
+      ai_generated: true,
+      is_active: true,
+      notes: description
+    },
+    exercises,
+    description
   };
 }

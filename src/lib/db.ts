@@ -562,6 +562,149 @@ export async function ensureAdminAccount(cpf: string, birthDate: string, passwor
   });
 }
 
+// ── Validate Reset Identity (CPF + birth date) ─────────────────
+export async function validateResetIdentity(cpf: string, birthDate: string): Promise<{ account_id: string; profile_name: string }> {
+  const c = onlyDigits(cpf);
+  if (!isValidCPF(c)) throw new Error('CPF inválido.');
+  if (!birthDate) throw new Error('Informe a data de nascimento.');
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('cpf', c)
+    .eq('birth_date', birthDate)
+    .maybeSingle();
+
+  if (profileError) throw new Error('Erro ao consultar dados: ' + profileError.message);
+  if (!profile) throw new Error('CPF e data de nascimento não correspondem a nenhum usuário.');
+
+  const { data: account } = await supabase
+    .from('user_accounts')
+    .select('id')
+    .eq('profile_id', profile.id)
+    .maybeSingle();
+
+  if (!account) throw new Error('Usuário não possui conta de acesso registrada.');
+
+  return { account_id: account.id, profile_name: profile.name };
+}
+
+// ── Admin: Create User ─────────────────────────────────────────
+export async function registerUserAdmin(input: RegisterInput, password: string): Promise<void> {
+  const cpf = onlyDigits(input.cpf);
+  if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
+  if (!input.name.trim()) throw new Error('Informe o nome.');
+  if (!input.birthDate) throw new Error('Informe a data de nascimento.');
+  if (password.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
+
+  const { data: existing } = await supabase
+    .from('user_accounts')
+    .select('id')
+    .eq('username', cpf)
+    .maybeSingle();
+  if (existing) throw new Error('CPF já cadastrado.');
+
+  const passwordHash = await hashPassword(password);
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      name: input.name.trim(),
+      email: input.email || null,
+      cpf,
+      birth_date: input.birthDate,
+      role: 'member',
+      gender: input.gender || 'other',
+      age: calcAge(input.birthDate),
+      height: 0,
+      current_weight: 0,
+      target_weight: 0,
+      activity_level: 'moderate',
+      fitness_goal: 'health',
+      daily_water_target_ml: 3000,
+      daily_calorie_target: 2200,
+      daily_protein_target_g: 160,
+      daily_carb_target_g: 200,
+      daily_fat_target_g: 60
+    })
+    .select()
+    .single();
+
+  if (profileError) throw new Error('Erro ao criar perfil: ' + profileError.message);
+
+  const { error } = await supabase.from('user_accounts').insert({
+    profile_id: profile.id,
+    username: cpf,
+    password_hash: passwordHash,
+    role: 'member',
+    is_active: true
+  });
+
+  if (error) throw new Error('Erro ao criar conta: ' + error.message);
+}
+
+// ── Admin: Update User Profile ─────────────────────────────────
+export async function updateUserProfileAdmin(
+  accountId: string,
+  data: { name?: string; cpf?: string; birth_date?: string; email?: string; gender?: string }
+): Promise<void> {
+  // Get the profile_id from the account
+  const { data: account, error: accError } = await supabase
+    .from('user_accounts')
+    .select('profile_id')
+    .eq('id', accountId)
+    .maybeSingle();
+
+  if (accError || !account) throw new Error('Conta não encontrada.');
+
+  const updates: Record<string, any> = {};
+  if (data.name !== undefined) updates.name = data.name.trim();
+  if (data.email !== undefined) updates.email = data.email || null;
+  if (data.gender !== undefined) updates.gender = data.gender;
+  if (data.birth_date !== undefined) {
+    updates.birth_date = data.birth_date;
+    updates.age = calcAge(data.birth_date);
+  }
+  if (data.cpf !== undefined) {
+    const c = onlyDigits(data.cpf);
+    if (!isValidCPF(c)) throw new Error('CPF inválido.');
+    // Check if CPF is already used by another account
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('cpf', c)
+      .maybeSingle();
+    if (existingProfile && existingProfile.id !== account.profile_id) {
+      throw new Error('CPF já está em uso por outro usuário.');
+    }
+    updates.cpf = c;
+    // Also update the username in user_accounts
+    await supabase.from('user_accounts').update({ username: c }).eq('id', accountId);
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  updates.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', account.profile_id);
+
+  if (error) throw new Error('Erro ao atualizar perfil: ' + error.message);
+}
+
+// ── Admin: Update User Password ────────────────────────────────
+export async function updateUserPasswordAdmin(accountId: string, newPassword: string): Promise<void> {
+  if (newPassword.length < 4) throw new Error('A senha deve ter ao menos 4 caracteres.');
+  const passwordHash = await hashPassword(newPassword);
+  const { error } = await supabase
+    .from('user_accounts')
+    .update({ password_hash: passwordHash, updated_at: new Date().toISOString() })
+    .eq('id', accountId);
+  if (error) throw new Error('Erro ao atualizar senha: ' + error.message);
+}
+
 function calcAge(birthDate: string): number {
   const birth = new Date(birthDate);
   const now = new Date();
