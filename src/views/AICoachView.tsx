@@ -109,12 +109,15 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
 
   const toggleLimitation = (id: string) => {
     if (id === 'none') {
-      setLimitations([]);
+      setLimitations(prev => prev.includes('none') ? [] : ['none']);
       return;
     }
-    setLimitations(prev =>
-      prev.includes(id) ? prev.filter(l => l !== id) : [...prev, id]
-    );
+    setLimitations(prev => {
+      const withoutNone = prev.filter(l => l !== 'none');
+      return withoutNone.includes(id)
+        ? withoutNone.filter(l => l !== id)
+        : [...withoutNone, id];
+    });
   };
 
   const toggleObjective = (id: string) => {
@@ -135,7 +138,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
       const ws = await onGenerateWorkout({
         objective: objectives[0] as any,
         objectives: objectives as any,
-        limitations: limitations.map(l => DIFFICULTIES_PRETTY[l] || l),
+        limitations: limitations.filter(l => l !== 'none').map(l => DIFFICULTIES_PRETTY[l] || l),
         daysPerWeek,
         sessionMinutes,
         experience
@@ -353,7 +356,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {LIMITATIONS.map((lim) => {
                 const isNone = lim.id === 'none';
-                const selected = isNone ? limitations.length === 0 : limitations.includes(lim.id);
+                const selected = limitations.includes(lim.id);
                 return (
                   <button
                     key={lim.id}
