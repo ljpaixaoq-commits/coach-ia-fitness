@@ -162,8 +162,11 @@ export function processAICoachPrompt(
 
 // ── Workout Generator ──────────────────────────────────────────
 
+export type ObjectiveKey = 'lose_weight' | 'hypertrophy' | 'endurance' | 'health';
+
 export interface WorkoutGoal {
-  objective: 'lose_weight' | 'hypertrophy' | 'endurance' | 'health';
+  objective: ObjectiveKey;
+  objectives?: ObjectiveKey[];
   limitations: string[];
   daysPerWeek: number;
   sessionMinutes: number;
@@ -272,39 +275,112 @@ function buildExercises(groups: string[], limitations: string[], experience: 'be
   return exercises;
 }
 
-export function generateWorkout(goal: WorkoutGoal, profile: Profile): { workout: Omit<Workout, 'id'>; exercises: WorkoutExercise[]; description: string } {
-  const groupMap: Record<string, string[][]> = {
-    2: [['chest', 'back'], ['legs', 'core']],
-    3: [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
-    4: [['chest', 'arms'], ['back', 'shoulders'], ['legs', 'core'], ['cardio', 'core']],
-    5: [['chest', 'core'], ['back', 'arms'], ['legs'], ['shoulders', 'core'], ['cardio', 'arms']],
-    6: [['chest'], ['back'], ['legs'], ['shoulders', 'arms'], ['legs', 'core'], ['cardio', 'core']]
-  };
+// ── Group-shuffled exercise builder for variations ────────────
+function shuffleWithSeed<T>(arr: T[], seed: number): T[] {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 16807 + 0) % 2147483647;
+    const j = s % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
+function buildExercisesShuffled(groups: string[], limitations: string[], experience: 'beginner' | 'intermediate' | 'advanced', sessionMinutes: number, seed: number): WorkoutExercise[] {
+  const hasKneeIssue = limitations.some(l => l.toLowerCase().includes('joelho') || l.toLowerCase().includes('knee'));
+  const hasBackIssue = limitations.some(l => l.toLowerCase().includes('coluna') || l.toLowerCase().includes('costa') || l.toLowerCase().includes('lombar'));
+
+  const setsMultiplier = experience === 'beginner' ? 0.75 : experience === 'advanced' ? 1.25 : 1;
+
+  const exercises: WorkoutExercise[] = [];
+  let order = 0;
+
+  for (const group of groups) {
+    const pool = EXERCISE_DB[group] || [];
+    const filtered = pool.filter(ex => {
+      if (hasKneeIssue && !ex.kneeSafe) return false;
+      if (hasBackIssue && (ex.name.includes('Curvada') || ex.name.includes('Remada Curvada'))) return false;
+      return true;
+    });
+
+    const count = group === 'cardio' ? 1 : experience === 'beginner' ? 2 : 3;
+    const shuffled = shuffleWithSeed(filtered, seed + order);
+    const selected = shuffled.slice(0, count);
+
+    for (const ex of selected) {
+      const sets = Math.round(ex.sets * setsMultiplier);
+      exercises.push({
+        id: `ex-ai-${Date.now()}-${order}`,
+        workout_id: '',
+        name: ex.name,
+        muscle_group: ex.muscle,
+        exercise_type: ex.type,
+        sets,
+        reps_target: ex.reps,
+        default_weight_kg: 0,
+        duration_minutes: ex.type === 'cardio' ? parseInt(ex.reps) || 15 : undefined,
+        rest_time_seconds: ex.rest,
+        order_index: order++,
+        completed: false,
+        sets_data: Array.from({ length: sets }, (_, i) => ({
+          set_number: i + 1,
+          reps_target: ex.reps,
+          weight_kg: 0,
+          completed: false
+        }))
+      });
+    }
+  }
+
+  return exercises;
+}
+
+export const OBJECTIVE_NAMES: Record<string, string> = {
+  lose_weight: 'Emagrecimento',
+  hypertrophy: 'Hipertrofia',
+  endurance: 'Resistência',
+  health: 'Saúde'
+};
+
+const DIFF_NAMES: Record<string, string> = {
+  beginner: 'Iniciante',
+  intermediate: 'Intermediário',
+  advanced: 'Avançado'
+};
+
+const CATEGORY_MAP: Record<string, string> = {
+  chest: 'Push', back: 'Pull', shoulders: 'Push', legs: 'Legs', arms: 'Pull', core: 'Full Body', cardio: 'Cardio'
+};
+
+const GROUP_MAP: Record<string, string[][]> = {
+  2: [['chest', 'back'], ['legs', 'core']],
+  3: [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
+  4: [['chest', 'arms'], ['back', 'shoulders'], ['legs', 'core'], ['cardio', 'core']],
+  5: [['chest', 'core'], ['back', 'arms'], ['legs'], ['shoulders', 'core'], ['cardio', 'arms']],
+  6: [['chest'], ['back'], ['legs'], ['shoulders', 'arms'], ['legs', 'core'], ['cardio', 'core']]
+};
+
+function buildWorkoutResult(
+  goal: WorkoutGoal,
+  profile: Profile,
+  variationIndex: number,
+  suffix: string,
+  dayGroupsOverride?: string[][]
+): { workout: Omit<Workout, 'id'>; exercises: WorkoutExercise[]; description: string } {
   const daysToUse = Math.max(2, Math.min(6, goal.daysPerWeek));
-  const dayGroups = groupMap[daysToUse] || groupMap[3];
+  const dayGroups = dayGroupsOverride || GROUP_MAP[daysToUse] || GROUP_MAP[3];
 
-  const categoryMap: Record<string, string> = {
-    chest: 'Push', back: 'Pull', shoulders: 'Push', legs: 'Legs', arms: 'Pull', core: 'Full Body', cardio: 'Cardio'
-  };
+  const primaryObjective = goal.objectives?.[0] || goal.objective;
+  const allObjectiveNames = (goal.objectives || [goal.objective]).map(o => OBJECTIVE_NAMES[o] || o);
+  const objectiveLabel = allObjectiveNames.length > 1
+    ? allObjectiveNames.join(' + ')
+    : allObjectiveNames[0];
 
-  const objectiveNames: Record<string, string> = {
-    lose_weight: 'Emagrecimento',
-    hypertrophy: 'Hipertrofia',
-    endurance: 'Resistência',
-    health: 'Saúde'
-  };
+  const primaryGroups = dayGroups[variationIndex % dayGroups.length] || dayGroups[0] || ['chest'];
+  const category = (CATEGORY_MAP[primaryGroups[0]] || 'Full Body') as any;
 
-  const diffNames: Record<string, string> = {
-    beginner: 'Iniciante',
-    intermediate: 'Intermediário',
-    advanced: 'Avançado'
-  };
-
-  const primaryGroups = dayGroups[0] || ['chest'];
-  const category = (categoryMap[primaryGroups[0]] || 'Full Body') as any;
-
-  const exercises = buildExercises(primaryGroups, goal.limitations, goal.experience, goal.sessionMinutes);
+  const exercises = buildExercisesShuffled(primaryGroups, goal.limitations, goal.experience, goal.sessionMinutes, variationIndex * 1000 + 42);
 
   const totalExercises = exercises.length;
   const estimatedDuration = exercises.reduce((acc, ex) => acc + (ex.sets * 3) + (ex.rest_time_seconds / 60), 0);
@@ -313,12 +389,12 @@ export function generateWorkout(goal: WorkoutGoal, profile: Profile): { workout:
     ? `\n\n**Restrições consideradas:** ${goal.limitations.join(', ')}`
     : '';
 
-  const description = `Treino gerado automaticamente pelo Coach IA.\n\n**Objetivo:** ${objectiveNames[goal.objective]}\n**Nível:** ${diffNames[goal.experience]}\n**Frequência:** ${daysToUse}x por semana\n**Sessão:** ~${Math.round(estimatedDuration)} min${limitationsText}\n\n**Exercícios (${totalExercises}):**\n${exercises.map((ex, i) => `${i + 1}. ${ex.name} (${ex.sets}x${ex.reps_target})`).join('\n')}`;
+  const description = `Treino gerado automaticamente pelo Coach IA.\n\n**Objetivo:** ${objectiveLabel}${suffix ? `\n**Variação:** ${suffix}` : ''}\n**Nível:** ${DIFF_NAMES[goal.experience]}\n**Frequência:** ${daysToUse}x por semana\n**Sessão:** ~${Math.round(estimatedDuration)} min${limitationsText}\n\n**Exercícios (${totalExercises}):**\n${exercises.map((ex, i) => `${i + 1}. ${ex.name} (${ex.sets}x${ex.reps_target})`).join('\n')}`;
 
   return {
     workout: {
       profile_id: profile.id,
-      title: `Treino ${objectiveNames[goal.objective]} - ${diffNames[goal.experience]}`,
+      title: `Treino ${objectiveLabel}${suffix ? ` - ${suffix}` : ''} - ${DIFF_NAMES[goal.experience]}`,
       subtitle: `${daysToUse}x por semana · ~${Math.round(estimatedDuration)} min`,
       category,
       day_of_week: [],
@@ -331,4 +407,13 @@ export function generateWorkout(goal: WorkoutGoal, profile: Profile): { workout:
     exercises,
     description
   };
+}
+
+export function generateWorkout(goal: WorkoutGoal, profile: Profile): { workout: Omit<Workout, 'id'>; exercises: WorkoutExercise[]; description: string } {
+  return buildWorkoutResult(goal, profile, 0, '');
+}
+
+export function generateVariation(goal: WorkoutGoal, profile: Profile, variationIndex: number): { workout: Omit<Workout, 'id'>; exercises: WorkoutExercise[]; description: string } {
+  const suffix = `Variação ${variationIndex + 1}`;
+  return buildWorkoutResult(goal, profile, variationIndex, suffix);
 }

@@ -21,12 +21,12 @@ interface AICoachViewProps {
   todayWorkout?: Workout;
   injuries: InjuryPainLog[];
   onSendMessage: (message: string) => void;
-  onGenerateWorkout: (goal: WorkoutGoal) => Promise<Workout>;
+  onGenerateWorkout: (goal: WorkoutGoal, count: number) => Promise<Workout[]>;
   onNavigateTab: (tab: string) => void;
 }
 
 type CoachMode = 'home' | 'create' | 'adjust' | 'improve' | 'chat';
-type CreateStep = 'objective' | 'limitations' | 'details' | 'confirm';
+type CreateStep = 'objective' | 'limitations' | 'details' | 'variations' | 'confirm';
 
 const OBJECTIVES = [
   { id: 'lose_weight', label: 'Emagrecimento', desc: 'Perder gordura e queimar calorias', icon: TrendingUp, color: 'from-rose-500/20 to-rose-600/20 text-rose-300 border-rose-500/30' },
@@ -68,13 +68,14 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
 
   // Create Workout flow
   const [createStep, setCreateStep] = useState<CreateStep>('objective');
-  const [objective, setObjective] = useState<string | null>(null);
+  const [objectives, setObjectives] = useState<string[]>([]);
   const [limitations, setLimitations] = useState<string[]>([]);
   const [daysPerWeek, setDaysPerWeek] = useState(3);
   const [sessionMinutes, setSessionMinutes] = useState(60);
   const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+  const [numVariations, setNumVariations] = useState(2);
   const [generating, setGenerating] = useState(false);
-  const [generatedWorkout, setGeneratedWorkout] = useState<Workout | null>(null);
+  const [generatedWorkouts, setGeneratedWorkouts] = useState<Workout[]>([]);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,9 +91,10 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const goCreate = () => {
     setMode('create');
     setCreateStep('objective');
-    setObjective(null);
+    setObjectives([]);
     setLimitations([]);
-    setGeneratedWorkout(null);
+    setGeneratedWorkouts([]);
+    setNumVariations(2);
   };
 
   const startAdjust = () => {
@@ -115,18 +117,30 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
     );
   };
 
+  const toggleObjective = (id: string) => {
+    setObjectives(prev => {
+      const next = prev.includes(id) ? prev.filter(o => o !== id) : [...prev, id];
+      return next;
+    });
+  };
+
+  const selectAllObjectives = () => {
+    setObjectives(prev => prev.length === OBJECTIVES.length ? [] : OBJECTIVES.map(o => o.id));
+  };
+
   const handleGenerate = async () => {
-    if (!objective) return;
+    if (objectives.length === 0) return;
     setGenerating(true);
     try {
-      const w = await onGenerateWorkout({
-        objective: objective as any,
+      const ws = await onGenerateWorkout({
+        objective: objectives[0] as any,
+        objectives: objectives as any,
         limitations: limitations.map(l => DIFFICULTIES_PRETTY[l] || l),
         daysPerWeek,
         sessionMinutes,
         experience
-      });
-      setGeneratedWorkout(w);
+      }, numVariations);
+      setGeneratedWorkouts(ws);
       setCreateStep('confirm');
     } catch (e) {
       console.error(e);
@@ -253,51 +267,80 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             <span>Voltar</span>
           </button>
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Criar Treino · Passo {createStep === 'objective' ? '1' : createStep === 'limitations' ? '2' : createStep === 'details' ? '3' : '4'} de 4
+            Criar Treino · Passo {createStep === 'objective' ? '1' : createStep === 'limitations' ? '2' : createStep === 'details' ? '3' : createStep === 'variations' ? '4' : '5'} de 5
           </span>
         </div>
 
         {/* Progress bar */}
         <div className="flex space-x-1.5">
-          {[0, 1, 2, 3].map(i => (
-            <div key={i} className={`flex-1 h-1 rounded-full ${i <= (createStep === 'objective' ? 0 : createStep === 'limitations' ? 1 : createStep === 'details' ? 2 : 3) ? 'bg-blue-500' : 'bg-slate-800'}`} />
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} className={`flex-1 h-1 rounded-full ${i <= (createStep === 'objective' ? 0 : createStep === 'limitations' ? 1 : createStep === 'details' ? 2 : createStep === 'variations' ? 3 : 4) ? 'bg-blue-500' : 'bg-slate-800'}`} />
           ))}
         </div>
 
-        {/* STEP 1: Objective */}
+        {/* STEP 1: Objectives (multi-select) */}
         {createStep === 'objective' && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-base font-bold text-white">Qual é o seu objetivo?</h2>
-              <p className="text-xs text-slate-400">Selecione o foco principal do seu treino.</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-white">Quais são seus objetivos?</h2>
+                <p className="text-xs text-slate-400">Escolha 1, vários ou todos os objetivos. Isso personaliza os exercícios.</p>
+              </div>
+              <button
+                onClick={selectAllObjectives}
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+                  objectives.length === OBJECTIVES.length
+                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                    : 'bg-dark-850 border-slate-700 text-slate-400 hover:text-white'
+                }`}
+              >
+                {objectives.length === OBJECTIVES.length ? 'Todos selecionados' : 'Selecionar todos'}
+              </button>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {OBJECTIVES.map((obj) => {
                 const Icon = obj.icon;
-                const selected = objective === obj.id;
+                const selected = objectives.includes(obj.id);
                 return (
                   <button
                     key={obj.id}
-                    onClick={() => { setObjective(obj.id); setCreateStep('limitations'); }}
+                    onClick={() => toggleObjective(obj.id)}
                     className={`p-4 rounded-2xl border text-left transition-all ${selected ? obj.color : 'bg-dark-900 border-slate-800 hover:border-slate-700'}`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-r flex items-center justify-center ${obj.color}`}>
-                        <Icon className="w-4.5 h-4.5" />
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-r flex items-center justify-center ${selected ? obj.color : 'bg-dark-850'}`}>
+                        <Icon className={`w-4.5 h-4.5 ${selected ? '' : 'text-slate-400'}`} />
                       </div>
                       {selected && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
                     </div>
-                    <h3 className="text-sm font-bold text-white">{obj.label}</h3>
+                    <h3 className={`text-sm font-bold ${selected ? 'text-white' : 'text-slate-200'}`}>{obj.label}</h3>
                     <p className="text-[11px] text-slate-400 mt-0.5">{obj.desc}</p>
                   </button>
                 );
               })}
             </div>
+
+            <div className="flex justify-between pt-2">
+              <button
+                onClick={() => setMode('home')}
+                className="px-4 py-2.5 rounded-xl bg-dark-850 border border-slate-700 text-slate-400 text-xs font-bold hover:text-white transition-colors"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={() => setCreateStep('limitations')}
+                disabled={objectives.length === 0}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors disabled:opacity-40"
+              >
+                Continuar <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* STEP 2: Limitations */}
-        {createStep === 'limitations' && objective && (
+        {createStep === 'limitations' && objectives.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -354,7 +397,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
         )}
 
         {/* STEP 3: Details */}
-        {createStep === 'details' && objective && (
+        {createStep === 'details' && objectives.length > 0 && (
           <div className="space-y-5">
             <div>
               <h2 className="text-base font-bold text-white">Configurações do treino</h2>
@@ -433,6 +476,69 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
                 Voltar
               </button>
               <button
+                onClick={() => setCreateStep('variations')}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors"
+              >
+                <Sparkles className={gifClass} />
+                <span>Continuar</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Variations */}
+        {createStep === 'variations' && objectives.length > 0 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-base font-bold text-white">Quantos modelos de treino você quer?</h2>
+              <p className="text-xs text-slate-400">Cada modelo terá os mesmos parâmetros, mas com exercícios diferentes para você variar.</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[2, 3, 4].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setNumVariations(n)}
+                  className={`p-4 rounded-2xl border text-center transition-all ${
+                    numVariations === n
+                      ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                      : 'bg-dark-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <p className={`text-2xl font-bold ${numVariations === n ? 'text-white' : 'text-slate-200'}`}>{n}</p>
+                  <p className="text-[11px] font-semibold mt-0.5">modelos</p>
+                  <p className={`text-[10px] text-slate-400 mt-1 ${numVariations === n ? 'text-blue-300' : ''}`}>
+                    {n === 2 ? '2 treinos distintos' : n === 3 ? '3 treinos distintos' : '4 treinos distintos'}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* Objectives summary */}
+            <div className="p-3.5 rounded-2xl bg-dark-900 border border-slate-800">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Resumo do treino</p>
+              <div className="flex flex-wrap gap-1.5">
+                {objectives.map(o => (
+                  <span key={o} className="px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                    {OBJECTIVES.find(ob => ob.id === o)?.label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">
+                {daysPerWeek} dias/semana · {sessionMinutes} min por sessão ·{" "}
+                {experience === 'beginner' ? 'Iniciante' : experience === 'intermediate' ? 'Intermediário' : 'Avançado'}
+                {limitations.length > 0 && ` · ${limitations.map(l => DIFFICULTIES_PRETTY[l] || l).join(', ')}`}
+              </p>
+            </div>
+
+            <div className="flex justify-between pt-2">
+              <button
+                onClick={() => setCreateStep('details')}
+                className="px-4 py-2.5 rounded-xl bg-dark-850 border border-slate-700 text-slate-400 text-xs font-bold hover:text-white transition-colors"
+              >
+                Voltar
+              </button>
+              <button
                 onClick={handleGenerate}
                 disabled={generating}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors disabled:opacity-60"
@@ -440,12 +546,12 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
                 {generating ? (
                   <>
                     <Loader2 className={gifClass + " animate-spin"} />
-                    <span>Gerando treino...</span>
+                    <span>Gerando {numVariations} modelos...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className={gifClass} />
-                    <span>Gerar Treino</span>
+                    <span>Gerar {numVariations} modelos de treino</span>
                   </>
                 )}
               </button>
@@ -453,36 +559,53 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
           </div>
         )}
 
-        {/* STEP 4: Confirmation */}
-        {createStep === 'confirm' && generatedWorkout && (
+        {/* STEP 5: Confirmation */}
+        {createStep === 'confirm' && generatedWorkouts.length > 0 && (
           <div className="space-y-4">
             <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-base font-bold text-white">Treino criado com sucesso!</h2>
+                <h2 className="text-base font-bold text-white">
+                  {generatedWorkouts.length > 1 ? `${generatedWorkouts.length} modelos de treino criados com sucesso!` : 'Treino criado com sucesso!'}
+                </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-1">{generatedWorkout.title}</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Cada modelo foi salvo separadamente em "Meus Treinos".
+              </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-dark-900 border border-slate-800">
-              <h3 className="text-sm font-bold text-white mb-3">Exercícios gerados</h3>
-              <div className="space-y-2">
-                {generatedWorkout.exercises?.map((ex, i) => (
-                  <div key={ex.id} className="flex items-center justify-between p-2.5 rounded-xl bg-dark-850 border border-slate-800">
-                    <div className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-lg bg-blue-600/20 text-blue-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                      <div>
-                        <p className="text-xs font-bold text-white">{ex.name}</p>
-                        <p className="text-[10px] text-slate-400">{ex.muscle_group}</p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-slate-300 font-semibold px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300">
-                      {ex.sets} x {ex.reps_target}
+            {generatedWorkouts.map((w, wi) => (
+              <div key={w.id} className="p-4 rounded-2xl bg-dark-900 border border-slate-800">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-bold text-white">{w.title}</h3>
+                  {generatedWorkouts.length > 1 && (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                      Modelo {wi + 1}
                     </span>
-                  </div>
-                ))}
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mb-3">{w.subtitle}</p>
+                <div className="space-y-2">
+                  {w.exercises?.slice(0, 10).map((ex, i) => (
+                    <div key={ex.id} className="flex items-center justify-between p-2.5 rounded-xl bg-dark-850 border border-slate-800">
+                      <div className="flex items-center space-x-2.5">
+                        <span className="w-5 h-5 rounded-lg bg-blue-600/20 text-blue-400 text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                        <div>
+                          <p className="text-xs font-bold text-white">{ex.name}</p>
+                          <p className="text-[10px] text-slate-400">{ex.muscle_group}</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] text-slate-300 font-semibold px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300">
+                        {ex.sets} x {ex.reps_target}
+                      </span>
+                    </div>
+                  ))}
+                  {(w.exercises?.length || 0) > 10 && (
+                    <p className="text-[11px] text-slate-500 pl-2">+ {(w.exercises?.length || 0) - 10} outros exercícios...</p>
+                  )}
+                </div>
               </div>
-            </div>
+            ))}
 
             <div className="flex space-x-2 pt-2">
               <button

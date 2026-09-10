@@ -23,7 +23,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, WorkoutGoal } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -719,33 +719,39 @@ export function useAppStore() {
   };
 
   // AI Workout Generation
-  const generateAndSaveWorkout = async (goal: WorkoutGoal): Promise<Workout> => {
-    const result = generateWorkout(goal, activeProfile);
-    const workoutId = `wkt-ai-${Date.now()}`;
-    const newWorkout: Workout = {
-      ...result.workout,
-      id: workoutId,
-      profile_id: activeProfile.id,
-      exercises: result.exercises.map(ex => ({ ...ex, workout_id: workoutId }))
-    };
+  const generateAndSaveWorkout = async (goal: WorkoutGoal, count: number = 1): Promise<Workout[]> => {
+    const results: Workout[] = [];
+    const variations = count > 1 ? Array.from({ length: count }, (_, i) => i) : [0];
 
-    setWorkouts(prev => [newWorkout, ...prev]);
-    syncWorkout(newWorkout);
-    newWorkout.exercises?.forEach(ex => syncWorkoutExercise(ex));
+    for (const idx of variations) {
+      const result = idx === 0 ? generateWorkout(goal, activeProfile) : generateVariation(goal, activeProfile, idx);
+      const workoutId = `wkt-ai-${Date.now()}-${idx}`;
+      const newWorkout: Workout = {
+        ...result.workout,
+        id: workoutId,
+        profile_id: activeProfile.id,
+        exercises: result.exercises.map(ex => ({ ...ex, workout_id: workoutId }))
+      };
 
-    // Post AI message describing the new workout
+      setWorkouts(prev => [newWorkout, ...prev]);
+      syncWorkout(newWorkout);
+      newWorkout.exercises?.forEach(ex => syncWorkoutExercise(ex));
+      results.push(newWorkout);
+    }
+
+    // Post AI message describing the new workout(s)
     const aiMsg: AICoachMessage = {
       id: `msg-ai-${Date.now()}`,
       profile_id: activeProfile.id,
       sender: 'ai',
-      message: `✅ **Treino gerado com sucesso!**\n\n${result.description}`,
+      message: `✅ **${results.length > 1 ? `${results.length} treinos gerados com sucesso!` : 'Treino gerado com sucesso!'}**\n\n${results.map(r => r.notes).join('\n\n---\n\n')}`,
       intent_type: 'general',
       created_at: new Date().toISOString()
     };
     setMessages(prev => [...prev, aiMsg]);
     syncMessage(aiMsg);
 
-    return newWorkout;
+    return results;
   };
 
   return {
