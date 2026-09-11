@@ -208,7 +208,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   // ── HOME SCREEN ──────────────────────────────────────────────
   if (mode === 'home') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-16">
         {/* Header */}
         <div className="glass-card rounded-2xl p-5 border border-slate-800">
           <div className="flex items-center space-x-3">
@@ -314,7 +314,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   // ── CREATE WORKOUT FLOW ──────────────────────────────────────
   if (mode === 'create') {
     return (
-      <div className="space-y-5 max-w-2xl">
+      <div className="space-y-5 max-w-2xl pb-16">
         {/* Header */}
         <div className="flex items-center justify-between">
           <button onClick={() => setMode('home')} className="flex items-center space-x-1 text-xs font-bold text-slate-400 hover:text-blue-400 transition-colors">
