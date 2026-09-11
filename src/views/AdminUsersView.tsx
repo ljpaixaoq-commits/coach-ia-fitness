@@ -258,7 +258,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

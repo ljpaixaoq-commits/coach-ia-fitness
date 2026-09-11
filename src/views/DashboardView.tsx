@@ -66,7 +66,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const caloriePct = Math.min(100, Math.round((todayCalories / profile.daily_calorie_target) * 100));
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
       {/* 1. Saudação Dinâmica de Acordo com o Horário */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

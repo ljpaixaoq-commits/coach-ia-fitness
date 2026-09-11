@@ -709,7 +709,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const chatColor = isAdjust ? 'text-amber-300' : isImprove ? 'text-emerald-300' : 'text-purple-400';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] lg:h-[calc(100vh-120px)]">
+    <div className="flex flex-col h-[calc(100vh-210px)] lg:h-[calc(100vh-120px)]">
       {/* Header */}
       <div className="glass-card rounded-2xl p-4 border border-slate-800 flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center space-x-3">
