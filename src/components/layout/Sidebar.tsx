@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmi
     { id: 'aicoach', label: 'Coach IA', icon: Bot, badge: 'IA' },
     { id: 'evolution', label: 'Peso & Evolução', icon: TrendingUp, badge: null },
     { id: 'nutrition', label: 'Alimentação', icon: UtensilsCrossed, badge: null },
-    { id: 'supplements', label: 'Suplementos', icon: Pill, badge: 'Mistura' },
+    { id: 'supplements', label: 'Suplementos', icon: Pill, badge: null },
     { id: 'health', label: 'Saúde & Joelho', icon: HeartPulse, badge: 'Atenção' },
     { id: 'photos', label: 'Fotos Corporais', icon: Camera, badge: null },
     { id: 'goals', label: 'Metas', icon: Target, badge: null },
@@ -71,8 +71,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmi
                         ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                         : item.badge === 'Atenção'
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : item.badge === 'Mistura'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : 'bg-blue-500/20 text-blue-300'
                     }`}
                   >
