@@ -26,7 +26,9 @@ interface WorkoutsViewProps {
   workouts: Workout[];
   onToggleExercise: (workoutId: string, exerciseId: string) => void;
   onToggleSet: (workoutId: string, exerciseId: string, setNumber: number) => void;
+  onToggleWorkout: (workoutId: string) => void;
   onUpdateWeight: (workoutId: string, exerciseId: string, newWeightKg: number) => void;
+  onUpdateSetWeight: (workoutId: string, exerciseId: string, setNumber: number, newWeightKg: number) => void;
   onUpdateDuration: (workoutId: string, exerciseId: string, newDurationMin: number) => void;
   onUpdateVideo: (workoutId: string, exerciseId: string, videoUrl: string) => void;
   onStartRestTimer: (seconds: number) => void;
@@ -37,7 +39,9 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   workouts,
   onToggleExercise,
   onToggleSet,
+  onToggleWorkout,
   onUpdateWeight,
+  onUpdateSetWeight,
   onUpdateDuration,
   onUpdateVideo,
   onStartRestTimer,
@@ -49,6 +53,8 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   const [activeVideoModal, setActiveVideoModal] = useState<WorkoutExercise | null>(null);
   const [editingWeightExId, setEditingWeightExId] = useState<string | null>(null);
   const [tempWeight, setTempWeight] = useState<string>('');
+  const [editingSetWeightKey, setEditingSetWeightKey] = useState<string | null>(null);
+  const [tempSetWeight, setTempSetWeight] = useState<string>('');
   const [editingDurationExId, setEditingDurationExId] = useState<string | null>(null);
   const [tempDuration, setTempDuration] = useState<string>('');
   const [editingVideoExId, setEditingVideoExId] = useState<string | null>(null);
@@ -93,6 +99,19 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
       onUpdateWeight(workoutId, exerciseId, val);
       setEditingWeightExId(null);
     }
+  };
+
+  const startEditSetWeight = (exerciseId: string, setNumber: number, currentWeight: number) => {
+    setEditingSetWeightKey(`${exerciseId}#${setNumber}`);
+    setTempSetWeight(String(currentWeight));
+  };
+
+  const handleSaveSetWeight = (workoutId: string, exerciseId: string, setNumber: number) => {
+    const val = parseFloat(tempSetWeight);
+    if (!isNaN(val) && val >= 0) {
+      onUpdateSetWeight(workoutId, exerciseId, setNumber, val);
+    }
+    setEditingSetWeightKey(null);
   };
 
   const handleSaveDuration = (workoutId: string, exerciseId: string) => {
@@ -163,6 +182,12 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                     <span>Adaptado por IA</span>
                   </span>
                 )}
+                {currentWorkout.is_completed && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Finalizado</span>
+                  </span>
+                )}
                 <span className="text-xs text-slate-400">{currentWorkout.estimated_duration_min} minutos estimados</span>
               </div>
               <h3 className="text-xl font-black text-white">{currentWorkout.title}</h3>
@@ -175,6 +200,17 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                 <div className="text-xs text-slate-400">Progresso da Sessão</div>
                 <div className="text-lg font-black text-emerald-400">{completedExercises}/{totalExercises} exercícios ({progressPct}%)</div>
               </div>
+              <button
+                onClick={() => onToggleWorkout(currentWorkout.id)}
+                className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                  currentWorkout.is_completed
+                    ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300 shadow-glow-emerald'
+                    : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-glow-emerald'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{currentWorkout.is_completed ? 'Treino Finalizado ✔' : 'Finalizar Treino'}</span>
+              </button>
               <button
                 onClick={() => onAskAIForAdaptation(`Estou realizando o ${currentWorkout.title}. Gostaria de sugestão para trocar algum exercício ou ajustar cargas hoje.`)}
                 className="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center space-x-1.5 transition-all"
@@ -199,7 +235,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
       <div className="space-y-4">
         <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
           <span>Exercícios da Sessão</span>
-          <span className="text-xs normal-case text-slate-500 font-normal">Toque nas séries para registrar a execução</span>
+          <span className="text-xs normal-case text-slate-500 font-normal">Toque nas séries para registrar a execução · Clique na carga para ajustar o peso por série</span>
         </h4>
 
         <div className="grid grid-cols-1 gap-4">
@@ -442,33 +478,74 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
 
                       {/* Interactive Sets Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                        {ex.sets_data?.map((set) => (
-                          <button
-                            key={set.set_number}
-                            onClick={() => handleSetClick(currentWorkout.id, ex, set.set_number)}
-                            className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${
-                              set.completed
-                                ? 'bg-emerald-600/25 border-emerald-500 text-white shadow-glow-emerald scale-[1.02]'
-                                : 'bg-dark-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-dark-850'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-1 text-xs font-bold">
-                              <span>Série {set.set_number}</span>
-                              {set.completed && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                        {ex.sets_data?.map((set) => {
+                          const isEditingWeight = editingSetWeightKey === `${ex.id}#${set.set_number}`;
+                          return (
+                            <div
+                              key={set.set_number}
+                              onClick={() => handleSetClick(currentWorkout.id, ex, set.set_number)}
+                              className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+                                set.completed
+                                  ? 'bg-emerald-600/25 border-emerald-500 text-white shadow-glow-emerald scale-[1.02]'
+                                  : 'bg-dark-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-dark-850'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-1 text-xs font-bold">
+                                <span>Série {set.set_number}</span>
+                                {set.completed && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                              </div>
+
+                              {isEditingWeight ? (
+                                <div
+                                  className="flex items-center space-x-1 mt-1.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    value={tempSetWeight}
+                                    onChange={(e) => setTempSetWeight(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveSetWeight(currentWorkout.id, ex.id, set.set_number);
+                                    }}
+                                    className="w-16 bg-dark-850 border border-blue-500 rounded-lg px-1.5 py-0.5 text-sm text-white font-bold text-center outline-none"
+                                    autoFocus
+                                  />
+                                  <span className="text-[10px] text-slate-400">kg</span>
+                                  <button
+                                    onClick={() => handleSaveSetWeight(currentWorkout.id, ex.id, set.set_number)}
+                                    className="p-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+                                    title="Salvar carga desta série"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditSetWeight(ex.id, set.set_number, set.weight_kg);
+                                  }}
+                                  className="text-sm font-black mt-0.5 inline-flex items-center space-x-1 hover:text-blue-300 transition-colors"
+                                  title="Editar carga desta série"
+                                >
+                                  <span>{set.weight_kg} kg</span>
+                                  <Pencil className="w-3 h-3 text-slate-500 hover:text-blue-400" />
+                                </button>
+                              )}
+
+                              <div className="text-[11px] text-slate-400">
+                                {set.reps_target} reps
+                              </div>
+                              <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                set.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-dark-800 text-slate-400'
+                              }`}>
+                                {set.completed ? 'Concluída' : 'Tocar p/ Concluir'}
+                              </div>
                             </div>
-                            <div className="text-sm font-black mt-0.5">
-                              {set.weight_kg} kg
-                            </div>
-                            <div className="text-[11px] text-slate-400">
-                              {set.reps_target} reps
-                            </div>
-                            <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              set.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-dark-800 text-slate-400'
-                            }`}>
-                              {set.completed ? 'Concluída' : 'Tocar p/ Concluir'}
-                            </div>
-                          </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

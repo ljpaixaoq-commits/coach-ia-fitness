@@ -86,6 +86,7 @@ export interface Workout {
   difficulty: 'iniciante' | 'intermediary' | 'avancado';
   ai_generated?: boolean;
   is_active: boolean;
+  is_completed?: boolean; // indica se o treino foi finalizado
   notes?: string;
   exercises?: WorkoutExercise[];
 }

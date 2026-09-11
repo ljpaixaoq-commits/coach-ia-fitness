@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS treinos (
     difficulty TEXT DEFAULT 'intermediary',
     ai_generated BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
+    is_completed BOOLEAN DEFAULT FALSE, -- indica se o treino já foi finalizado
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT fk_treinos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS treino_exercicios (
     video_url TEXT, -- link do vídeo de demonstração (YouTube ou próprio)
     demo_instructions TEXT,
     order_index INTEGER DEFAULT 0,
+    is_completed BOOLEAN DEFAULT FALSE, -- indica se o exercício foi finalizado
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT fk_treino_exercicios_treino FOREIGN KEY (workout_id) REFERENCES treinos(id) ON DELETE CASCADE
 );

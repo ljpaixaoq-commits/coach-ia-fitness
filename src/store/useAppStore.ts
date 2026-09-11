@@ -482,8 +482,8 @@ export function useAppStore() {
 
   // Workout Actions
   const toggleSetCompleted = (workoutId: string, exerciseId: string, setNumber: number) => {
-    setWorkouts(prev =>
-      prev.map(w => {
+    setWorkouts(prev => {
+      const next = prev.map(w => {
         if (w.id !== workoutId || !w.exercises) return w;
 
         return {
@@ -509,13 +509,17 @@ export function useAppStore() {
             };
           })
         };
-      })
-    );
+      });
+
+      const target = next.find(w => w.id === workoutId)?.exercises?.find(e => e.id === exerciseId);
+      if (target) syncWorkoutExercise(target);
+      return next;
+    });
   };
 
   const toggleExerciseCompleted = (workoutId: string, exerciseId: string) => {
-    setWorkouts(prev =>
-      prev.map(w => {
+    setWorkouts(prev => {
+      const next = prev.map(w => {
         if (w.id === workoutId && w.exercises) {
           return {
             ...w,
@@ -533,8 +537,23 @@ export function useAppStore() {
           };
         }
         return w;
-      })
-    );
+      });
+
+      const target = next.find(w => w.id === workoutId)?.exercises?.find(e => e.id === exerciseId);
+      if (target) syncWorkoutExercise(target);
+      return next;
+    });
+  };
+
+  const toggleWorkoutCompleted = (workoutId: string) => {
+    setWorkouts(prev => {
+      const next = prev.map(w =>
+        w.id === workoutId ? { ...w, is_completed: !w.is_completed } : w
+      );
+      const target = next.find(w => w.id === workoutId);
+      if (target) syncWorkout(target);
+      return next;
+    });
   };
 
   const updateExerciseWeight = (workoutId: string, exerciseId: string, newWeightKg: number) => {
@@ -551,6 +570,28 @@ export function useAppStore() {
               ...ex,
               default_weight_kg: newWeightKg,
               sets_data: (ex.sets_data || []).map(s => ({ ...s, weight_kg: newWeightKg }))
+            };
+          })
+        };
+      })
+    );
+  };
+
+  const updateSetWeight = (workoutId: string, exerciseId: string, setNumber: number, newWeightKg: number) => {
+    setWorkouts(prev =>
+      prev.map(w => {
+        if (w.id !== workoutId || !w.exercises) return w;
+
+        return {
+          ...w,
+          exercises: w.exercises.map(ex => {
+            if (ex.id !== exerciseId) return ex;
+
+            return {
+              ...ex,
+              sets_data: (ex.sets_data || []).map(s =>
+                s.set_number === setNumber ? { ...s, weight_kg: newWeightKg } : s
+              )
             };
           })
         };
@@ -819,6 +860,8 @@ export function useAppStore() {
     setActiveWorkout,
     toggleSetCompleted,
     toggleExerciseCompleted,
+    toggleWorkoutCompleted,
+    updateSetWeight,
     updateExerciseWeight,
     updateExerciseDuration,
     updateExerciseVideo,

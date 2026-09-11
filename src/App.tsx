@@ -112,7 +112,9 @@ export function App() {
               workouts={store.workouts}
               onToggleExercise={store.toggleExerciseCompleted}
               onToggleSet={store.toggleSetCompleted}
+              onToggleWorkout={store.toggleWorkoutCompleted}
               onUpdateWeight={store.updateExerciseWeight}
+              onUpdateSetWeight={store.updateSetWeight}
               onUpdateDuration={store.updateExerciseDuration}
               onUpdateVideo={store.updateExerciseVideo}
               onStartRestTimer={store.startRestTimer}

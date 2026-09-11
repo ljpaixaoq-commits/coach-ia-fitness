@@ -80,7 +80,8 @@ export async function loadAllData(): Promise<AllData | null> {
       video_url: ex.video_url,
       video_gif_url: ex.video_gif_url,
       demo_instructions: ex.demo_instructions,
-      order_index: ex.order_index || 0
+      order_index: ex.order_index || 0,
+      completed: ex.is_completed ?? false
     });
   });
 
@@ -101,6 +102,7 @@ export async function loadAllData(): Promise<AllData | null> {
 
   const workouts: Workout[] = (workoutsRes.data || []).map((w: any) => ({
     ...w,
+    is_completed: w.is_completed ?? false,
     day_of_week: Array.isArray(w.day_of_week) ? w.day_of_week : [],
     exercises: (exercisesByWorkout.get(w.id) || []).sort((a, b) => a.order_index - b.order_index)
   }));
@@ -221,10 +223,14 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
       await supabase.from('treinos').upsert(workoutData, { onConflict: 'id' });
       if (exercises?.length) {
         await supabase.from('treino_exercicios').upsert(
-          exercises.map(ex => ({
-            ...ex,
-            exercise_type: ex.exercise_type || 'strength'
-          })),
+          exercises.map(ex => {
+            const { completed, sets_data, ...exerciseColumns } = ex;
+            return {
+              ...exerciseColumns,
+              exercise_type: ex.exercise_type || 'strength',
+              is_completed: completed ?? false
+            };
+          }),
           { onConflict: 'id' }
         );
       }
@@ -297,7 +303,7 @@ export function syncProfile(p: Profile) {
 
 // ── Workout Sync ───────────────────────────────────────────────
 export function syncWorkout(w: Workout) {
-  const { id, profile_id, title, subtitle, category, day_of_week, estimated_duration_min, difficulty, ai_generated, is_active, notes } = w;
+  const { id, profile_id, title, subtitle, category, day_of_week, estimated_duration_min, difficulty, ai_generated, is_active, is_completed, notes } = w;
   return upsert('treinos', {
     id, profile_id, title, subtitle, category,
     day_of_week: day_of_week || [],
@@ -305,15 +311,17 @@ export function syncWorkout(w: Workout) {
     difficulty: difficulty || 'intermediary',
     ai_generated: ai_generated ?? false,
     is_active: is_active ?? true,
+    is_completed: is_completed ?? false,
     notes
   });
 }
 
 export function syncWorkoutExercise(ex: WorkoutExercise) {
-  const { id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index } = ex;
+  const { id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index, completed } = ex;
   return upsert('treino_exercicios', {
     id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds,
-    video_url, video_gif_url, demo_instructions, order_index
+    video_url, video_gif_url, demo_instructions, order_index,
+    is_completed: completed ?? false
   });
 }
 
