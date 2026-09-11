@@ -366,8 +366,8 @@ const CATEGORY_MAP: Record<string, string> = {
 };
 
 const GROUP_MAP: Record<string, string[][]> = {
-  2: [['chest', 'back'], ['legs', 'core']],
-  3: [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
+  2: [['chest', 'back'], ['legs', 'cardio']],
+  3: [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'cardio']],
   4: [['chest', 'arms'], ['back', 'shoulders'], ['legs', 'core'], ['cardio', 'core']],
   5: [['chest', 'core'], ['back', 'arms'], ['legs'], ['shoulders', 'core'], ['cardio', 'arms']],
   6: [['chest'], ['back'], ['legs'], ['shoulders', 'arms'], ['legs', 'core'], ['cardio', 'core']]
@@ -393,6 +393,16 @@ function buildWorkoutResult(
   const category = (CATEGORY_MAP[primaryGroups[0]] || 'Full Body') as any;
 
   const exercises = buildExercisesShuffled(primaryGroups, goal.limitations, goal.experience, goal.sessionMinutes, variationIndex * 1000 + 42);
+
+  // Cardio: garante um exercício de cardio para objetivos de emagrecimento,
+  // resistência ou saúde quando o treino ainda não incluiu nenhum.
+  const wantsCardio = primaryObjective === 'lose_weight' || primaryObjective === 'endurance' || primaryObjective === 'health';
+  if (wantsCardio && !exercises.some(ex => ex.exercise_type === 'cardio')) {
+    const hasKneeIssue = goal.limitations.some(l => l.toLowerCase().includes('joelho') || l.toLowerCase().includes('knee'));
+    const cardioPool = EXERCISE_DB.cardio.filter(ex => !hasKneeIssue || ex.kneeSafe);
+    const picked = cardioPool[variationIndex % cardioPool.length] || cardioPool[0];
+    if (picked) exercises.push(mapTemplateToExercise(picked, 1, exercises.length));
+  }
 
   const totalExercises = exercises.length;
   const estimatedDuration = exercises.reduce((acc, ex) => acc + (ex.sets * 3) + (ex.rest_time_seconds / 60), 0);
