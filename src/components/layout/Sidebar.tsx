@@ -29,7 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmi
     { id: 'evolution', label: 'Peso & Evolução', icon: TrendingUp, badge: null },
     { id: 'nutrition', label: 'Alimentação', icon: UtensilsCrossed, badge: null },
     { id: 'supplements', label: 'Suplementos', icon: Pill, badge: null },
-    { id: 'health', label: 'Saúde & Joelho', icon: HeartPulse, badge: 'Atenção' },
+    { id: 'health', label: 'Saúde', icon: HeartPulse, badge: 'Atenção' },
     { id: 'photos', label: 'Fotos Corporais', icon: Camera, badge: null },
     { id: 'goals', label: 'Metas', icon: Target, badge: null },
     { id: 'calendar', label: 'Calendário', icon: CalendarDays, badge: null },

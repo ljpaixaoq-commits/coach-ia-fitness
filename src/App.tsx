@@ -272,7 +272,7 @@ export function App() {
                 className="p-3 rounded-xl bg-dark-850 border border-line flex items-center space-x-2 text-content-secondary"
               >
                 <HeartPulse className="w-4 h-4 text-rose-400" />
-                <span>Saúde & Joelho</span>
+                <span>Saúde</span>
               </button>
 
               <button
