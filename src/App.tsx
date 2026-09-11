@@ -110,6 +110,8 @@ export function App() {
           {store.activeTab === 'workouts' && (
             <WorkoutsView
               workouts={store.workouts}
+              lastWorkoutLog={store.lastWorkoutLog}
+              workoutResult={store.workoutResult}
               onToggleExercise={store.toggleExerciseCompleted}
               onToggleSet={store.toggleSetCompleted}
               onToggleWorkout={store.toggleWorkoutCompleted}
@@ -122,6 +124,7 @@ export function App() {
                 store.sendAICoachMessage(prompt);
                 store.setActiveTab('aicoach');
               }}
+              onConfirmWorkoutResult={store.confirmWorkoutResult}
             />
           )}
 

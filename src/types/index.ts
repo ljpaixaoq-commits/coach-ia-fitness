@@ -87,6 +87,7 @@ export interface Workout {
   ai_generated?: boolean;
   is_active: boolean;
   is_completed?: boolean; // indica se o treino foi finalizado
+  last_completed_at?: string | null; // quando o treino foi realizado pela última vez
   notes?: string;
   exercises?: WorkoutExercise[];
 }
@@ -116,6 +117,14 @@ export interface WorkoutLog {
   user_feedback?: string;
   ai_feedback?: string;
   sets?: WorkoutLogSet[];
+}
+
+export interface WorkoutResult {
+  workoutId: string;
+  workoutTitle: string;
+  totalVolumeKg: number;
+  durationSeconds: number;
+  completedAt: string;
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre_workout' | 'post_workout';

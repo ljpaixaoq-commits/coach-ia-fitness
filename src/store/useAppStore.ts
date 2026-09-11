@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Profile,
   Workout,
   WorkoutExercise,
+  WorkoutLog,
+  WorkoutResult,
   Meal,
   WaterLog,
   Supplement,
@@ -39,6 +41,7 @@ import {
   syncMessage,
   syncWorkout,
   syncWorkoutExercise,
+  syncWorkoutLog,
   deleteWorkouts,
   loginUser,
   registerUser,
@@ -70,6 +73,26 @@ export type NavTab =
   | 'calendar'
   | 'profile'
   | 'admin';
+
+// ── Helpers de resumo do treino ────────────────────────────────
+function parseTargetReps(target: string): number {
+  const m = target?.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?/);
+  if (!m) return 0;
+  const a = parseFloat(m[1]);
+  const b = m[2] ? parseFloat(m[2]) : a;
+  return (a + b) / 2;
+}
+
+export function computeTotalVolume(exercises: WorkoutExercise[]): number {
+  let total = 0;
+  for (const ex of exercises) {
+    if (!ex.completed) continue;
+    for (const s of ex.sets_data || []) {
+      total += s.weight_kg * parseTargetReps(s.reps_target);
+    }
+  }
+  return Math.round(total * 10) / 10;
+}
 
 export function useAppStore() {
   // Supabase sync status
@@ -245,6 +268,15 @@ export function useAppStore() {
   const [restTimeRemaining, setRestTimeRemaining] = useState<number | null>(null);
   const [isResting, setIsResting] = useState<boolean>(false);
 
+  // Sessão de treino / Histórico de treinos realizados
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(() => {
+    const saved = localStorage.getItem('coach_workout_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [sessionStartedAt, setSessionStartedAt] = useState<string | null>(null);
+  const [workoutResult, setWorkoutResult] = useState<WorkoutResult | null>(null);
+  const prevAllCompletedRef = useRef<Set<string>>(new Set());
+
   // Meals
   const [meals, setMeals] = useState<Meal[]>(() => {
     const saved = localStorage.getItem('coach_meals');
@@ -317,6 +349,10 @@ export function useAppStore() {
   }, [workouts]);
 
   useEffect(() => {
+    localStorage.setItem('coach_workout_logs', JSON.stringify(workoutLogs));
+  }, [workoutLogs]);
+
+  useEffect(() => {
     localStorage.setItem('coach_meals', JSON.stringify(meals));
   }, [meals]);
 
@@ -355,6 +391,7 @@ export function useAppStore() {
       ...w,
       exercises: w.exercises?.map(enrichExerciseFromTemplate)
     })));
+    setWorkoutLogs(data.workoutLogs || []);
     setMeals(data.meals);
     setWaterLogs(data.waterLogs);
     setSupplements(data.supplements);
@@ -386,6 +423,7 @@ export function useAppStore() {
         seedInitialData({
           profiles: INITIAL_PROFILES,
           workouts: INITIAL_WORKOUTS,
+          workoutLogs: [],
           meals: INITIAL_MEALS,
           waterLogs: [],
           supplements: INITIAL_SUPPLEMENTS,
@@ -398,6 +436,7 @@ export function useAppStore() {
         refreshFromDB({
           profiles: INITIAL_PROFILES,
           workouts: INITIAL_WORKOUTS,
+          workoutLogs: [],
           meals: INITIAL_MEALS,
           waterLogs: [],
           supplements: INITIAL_SUPPLEMENTS,
@@ -431,6 +470,10 @@ export function useAppStore() {
 
   // Profile Specific Filters
   const userWorkouts = workouts.filter(w => w.profile_id === activeProfile.id);
+  const userWorkoutLogs = [...workoutLogs]
+    .filter(l => l.profile_id === activeProfile.id)
+    .sort((a, b) => (b.completed_at || b.started_at).localeCompare(a.completed_at || a.started_at));
+  const lastWorkoutLog = userWorkoutLogs[0] || null;
   const userSupplements = supplements.filter(s => s.profile_id === activeProfile.id);
   const userInjuries = injuries.filter(i => i.profile_id === activeProfile.id);
   const userGoals = goals.filter(g => g.profile_id === activeProfile.id);
@@ -482,6 +525,8 @@ export function useAppStore() {
 
   // Workout Actions
   const toggleSetCompleted = (workoutId: string, exerciseId: string, setNumber: number) => {
+    if (!sessionStartedAt) setSessionStartedAt(new Date().toISOString());
+
     setWorkouts(prev => {
       const next = prev.map(w => {
         if (w.id !== workoutId || !w.exercises) return w;
@@ -518,6 +563,8 @@ export function useAppStore() {
   };
 
   const toggleExerciseCompleted = (workoutId: string, exerciseId: string) => {
+    if (!sessionStartedAt) setSessionStartedAt(new Date().toISOString());
+
     setWorkouts(prev => {
       const next = prev.map(w => {
         if (w.id === workoutId && w.exercises) {
@@ -546,15 +593,72 @@ export function useAppStore() {
   };
 
   const toggleWorkoutCompleted = (workoutId: string) => {
-    setWorkouts(prev => {
-      const next = prev.map(w =>
-        w.id === workoutId ? { ...w, is_completed: !w.is_completed } : w
-      );
-      const target = next.find(w => w.id === workoutId);
-      if (target) syncWorkout(target);
-      return next;
+    const w = workouts.find(x => x.id === workoutId);
+    if (!w) return;
+    if (w.is_completed) {
+      setWorkouts(prev => prev.map(x => (x.id === workoutId ? { ...x, is_completed: false } : x)));
+      syncWorkout({ ...w, is_completed: false, last_completed_at: w.last_completed_at ?? null });
+    } else {
+      finalizeWorkout(w);
+    }
+  };
+
+  const finalizeWorkout = (w: Workout) => {
+    if (w.is_completed) return;
+    const now = new Date();
+    const startedTs = sessionStartedAt ? new Date(sessionStartedAt).getTime() : null;
+    const durationSeconds = startedTs
+      ? Math.max(1, Math.round((now.getTime() - startedTs) / 1000))
+      : (w.estimated_duration_min || 0) * 60;
+    const totalVolumeKg = computeTotalVolume(w.exercises || []);
+    const completedAt = now.toISOString();
+
+    const log: WorkoutLog = {
+      id: `log-${Date.now()}`,
+      profile_id: activeProfile.id,
+      workout_id: w.id,
+      workout_title: w.title,
+      started_at: sessionStartedAt || completedAt,
+      completed_at: completedAt,
+      duration_seconds: durationSeconds,
+      total_volume_kg: totalVolumeKg
+    };
+
+    setWorkouts(prev =>
+      prev.map(x =>
+        x.id === w.id ? { ...x, is_completed: true, last_completed_at: completedAt } : x
+      )
+    );
+    syncWorkout({ ...w, is_completed: true, last_completed_at: completedAt });
+
+    setWorkoutLogs(prev => [log, ...prev]);
+    syncWorkoutLog(log);
+    setSessionStartedAt(null);
+
+    setWorkoutResult({
+      workoutId: w.id,
+      workoutTitle: w.title,
+      totalVolumeKg,
+      durationSeconds,
+      completedAt
     });
   };
+
+  const confirmWorkoutResult = () => setWorkoutResult(null);
+
+  // Auto-finaliza o treino quando todos os exercícios são concluídos
+  useEffect(() => {
+    for (const w of workouts) {
+      const allDone = (w.exercises?.length || 0) > 0 && w.exercises!.every(e => e.completed);
+      const wasAllDone = prevAllCompletedRef.current.has(w.id);
+      if (allDone && !wasAllDone) {
+        finalizeWorkout(w);
+      }
+      if (allDone) prevAllCompletedRef.current.add(w.id);
+      else prevAllCompletedRef.current.delete(w.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workouts]);
 
   const updateExerciseWeight = (workoutId: string, exerciseId: string, newWeightKg: number) => {
     setWorkouts(prev =>
@@ -858,6 +962,10 @@ export function useAppStore() {
     allWorkouts: workouts,
     activeWorkout,
     setActiveWorkout,
+    workoutLogs: userWorkoutLogs,
+    lastWorkoutLog,
+    workoutResult,
+    confirmWorkoutResult,
     toggleSetCompleted,
     toggleExerciseCompleted,
     toggleWorkoutCompleted,

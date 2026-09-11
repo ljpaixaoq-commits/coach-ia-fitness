@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS treinos (
     ai_generated BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     is_completed BOOLEAN DEFAULT FALSE, -- indica se o treino já foi finalizado
+    last_completed_at TIMESTAMP WITH TIME ZONE, -- quando foi realizado pela última vez
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT fk_treinos_perfil FOREIGN KEY (profile_id) REFERENCES perfis(id) ON DELETE CASCADE

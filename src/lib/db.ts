@@ -4,6 +4,7 @@ import {
   Profile,
   Workout,
   WorkoutExercise,
+  WorkoutLog,
   Meal,
   MealItem,
   WaterLog,
@@ -19,6 +20,7 @@ import {
 export interface AllData {
   profiles: Profile[];
   workouts: Workout[];
+  workoutLogs: WorkoutLog[];
   meals: Meal[];
   waterLogs: WaterLog[];
   supplements: Supplement[];
@@ -37,6 +39,7 @@ export async function loadAllData(): Promise<AllData | null> {
     profilesRes,
     workoutsRes,
     exercisesRes,
+    workoutLogsRes,
     mealsRes,
     mealItemsRes,
     waterRes,
@@ -50,6 +53,7 @@ export async function loadAllData(): Promise<AllData | null> {
     supabase.from('perfis').select('*'),
     supabase.from('treinos').select('*'),
     supabase.from('treino_exercicios').select('*'),
+    supabase.from('registro_treinos').select('*'),
     supabase.from('refeicoes').select('*'),
     supabase.from('refeicao_itens').select('*'),
     supabase.from('registro_agua').select('*'),
@@ -115,6 +119,21 @@ export async function loadAllData(): Promise<AllData | null> {
   return {
     profiles: profilesRes.data || [],
     workouts,
+    workoutLogs: (workoutLogsRes.data || []).map((l: any) => ({
+      id: l.id,
+      profile_id: l.profile_id,
+      workout_id: l.workout_id,
+      workout_title: l.workout_title,
+      started_at: l.started_at,
+      completed_at: l.completed_at,
+      duration_seconds: l.duration_seconds || 0,
+      total_volume_kg: l.total_volume_kg || 0,
+      calories_burned: l.calories_burned,
+      rpe_effort: l.rpe_effort,
+      user_feedback: l.user_feedback,
+      ai_feedback: l.ai_feedback,
+      sets: []
+    })),
     meals,
     waterLogs: (waterRes.data || []).map((w: any) => ({
       id: w.id,
@@ -303,7 +322,7 @@ export function syncProfile(p: Profile) {
 
 // ── Workout Sync ───────────────────────────────────────────────
 export function syncWorkout(w: Workout) {
-  const { id, profile_id, title, subtitle, category, day_of_week, estimated_duration_min, difficulty, ai_generated, is_active, is_completed, notes } = w;
+  const { id, profile_id, title, subtitle, category, day_of_week, estimated_duration_min, difficulty, ai_generated, is_active, is_completed, last_completed_at, notes } = w;
   return upsert('treinos', {
     id, profile_id, title, subtitle, category,
     day_of_week: day_of_week || [],
@@ -312,6 +331,7 @@ export function syncWorkout(w: Workout) {
     ai_generated: ai_generated ?? false,
     is_active: is_active ?? true,
     is_completed: is_completed ?? false,
+    last_completed_at: last_completed_at ?? null,
     notes
   });
 }
@@ -331,6 +351,20 @@ export function deleteWorkout(id: string) {
 
 export function deleteWorkouts(ids: string[]) {
   return Promise.all(ids.map((id) => remove('treinos', id)));
+}
+
+// ── Workout Log Sync (Histórico de treinos realizados) ────────
+export function syncWorkoutLog(log: WorkoutLog) {
+  const {
+    id, profile_id, workout_id, workout_title, started_at, completed_at,
+    duration_seconds, total_volume_kg, calories_burned, rpe_effort,
+    user_feedback, ai_feedback
+  } = log;
+  return insert('registro_treinos', {
+    id, profile_id, workout_id, workout_title, started_at, completed_at,
+    duration_seconds, total_volume_kg, calories_burned, rpe_effort,
+    user_feedback, ai_feedback
+  });
 }
 
 // ── Meal Sync ──────────────────────────────────────────────────

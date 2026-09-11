@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Workout, WorkoutExercise } from '../types';
+import { Workout, WorkoutExercise, WorkoutLog, WorkoutResult } from '../types';
 import {
   Dumbbell,
   Play,
@@ -18,12 +18,15 @@ import {
   Check,
   Pencil,
   Link as LinkIcon,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface WorkoutsViewProps {
   workouts: Workout[];
+  lastWorkoutLog: WorkoutLog | null;
+  workoutResult: WorkoutResult | null;
   onToggleExercise: (workoutId: string, exerciseId: string) => void;
   onToggleSet: (workoutId: string, exerciseId: string, setNumber: number) => void;
   onToggleWorkout: (workoutId: string) => void;
@@ -33,10 +36,13 @@ interface WorkoutsViewProps {
   onUpdateVideo: (workoutId: string, exerciseId: string, videoUrl: string) => void;
   onStartRestTimer: (seconds: number) => void;
   onAskAIForAdaptation: (prompt: string) => void;
+  onConfirmWorkoutResult: () => void;
 }
 
 export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   workouts,
+  lastWorkoutLog,
+  workoutResult,
   onToggleExercise,
   onToggleSet,
   onToggleWorkout,
@@ -45,7 +51,8 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   onUpdateDuration,
   onUpdateVideo,
   onStartRestTimer,
-  onAskAIForAdaptation
+  onAskAIForAdaptation,
+  onConfirmWorkoutResult
 }) => {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>(
     workouts[0]?.id || ''
@@ -121,6 +128,36 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
     }
   };
 
+  const formatDuration = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}h ${m}min ${s}s`;
+    if (m > 0) return `${m}min ${s}s`;
+    return `${s}s`;
+  };
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return '';
+    }
+  };
+
+  const handleConfirmResult = () => {
+    if (workoutResult) {
+      const idx = workouts.findIndex(w => w.id === workoutResult.workoutId);
+      const next = workouts[(idx + 1) % workouts.length];
+      if (next) setSelectedWorkoutId(next.id);
+    }
+    onConfirmWorkoutResult();
+  };
+
   const getYoutubeEmbedUrl = (url?: string) => {
     if (!url) return null;
     if (url.includes('youtube.com/watch?v=')) {
@@ -161,10 +198,29 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               }`}
             >
               {getWorkoutTabLabel(w, wi)}
+              {w.id === lastWorkoutLog?.workout_id && (
+                <span className="ml-1.5 text-[10px] font-black text-emerald-400" title="Último treino realizado">✓</span>
+              )}
             </button>
           ))}
         </div>
       </div>
+
+      {/* 1.5 Histórico: último treino realizado */}
+      {lastWorkoutLog && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-dark-850/80 border border-slate-800 px-4 py-3 text-xs">
+          <div className="flex items-center space-x-2 text-slate-300">
+            <Clock className="w-4 h-4 text-blue-400" />
+            <span className="font-bold">Último treino realizado:</span>
+            <span className="font-black text-white">{lastWorkoutLog.workout_title}</span>
+            <span className="text-slate-500">· {formatDate(lastWorkoutLog.completed_at)}</span>
+          </div>
+          <div className="flex items-center space-x-4 ml-auto text-slate-400">
+            <span>⚖️ <b className="text-white">{lastWorkoutLog.total_volume_kg} kg</b> volume</span>
+            <span>⏱️ <b className="text-white">{formatDuration(lastWorkoutLog.duration_seconds)}</b></span>
+          </div>
+        </div>
+      )}
 
       {/* 2. Workout Hero Card */}
       {currentWorkout && (
@@ -191,6 +247,12 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
               </div>
               <h3 className="text-xl font-black text-white">{currentWorkout.title}</h3>
               <p className="text-xs text-slate-400">{currentWorkout.subtitle}</p>
+              {lastWorkoutLog && currentWorkout.id === lastWorkoutLog.workout_id && (
+                <p className="text-[11px] text-amber-400/90 mt-1 flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Este foi o último treino realizado. Você pode repeti-lo ou escolher outra ficha.</span>
+                </p>
+              )}
             </div>
 
             {/* Progress & AI Action */}
@@ -610,6 +672,41 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                 Entendido, voltar ao treino
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Resumo do Treino Finalizado */}
+      {workoutResult && (
+        <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-dark-900 border border-emerald-500/40 rounded-3xl p-6 lg:p-8 max-w-md w-full space-y-5 shadow-2xl text-center">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h3 className="text-2xl font-black text-white">Treino Finalizado! 🎉</h3>
+              <p className="text-xs text-slate-400">{workoutResult.workoutTitle}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-4 rounded-2xl bg-dark-850 border border-slate-700 text-center space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Peso Total</div>
+                <div className="text-2xl font-black text-emerald-400">{workoutResult.totalVolumeKg} kg</div>
+                <div className="text-[10px] text-slate-500">volume levantado</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-dark-850 border border-slate-700 text-center space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tempo</div>
+                <div className="text-2xl font-black text-blue-400">{formatDuration(workoutResult.durationSeconds)}</div>
+                <div className="text-[10px] text-slate-500">de treino</div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmResult}
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-glow-emerald transition-all"
+            >
+              Confirmar e Ir para o Próximo Treino →
+            </button>
           </div>
         </div>
       )}
