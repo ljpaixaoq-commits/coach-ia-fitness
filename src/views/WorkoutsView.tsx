@@ -19,7 +19,8 @@ import {
   Pencil,
   Link as LinkIcon,
   X,
-  Clock
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -65,6 +66,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   const [tempDuration, setTempDuration] = useState<string>('');
   const [editingVideoExId, setEditingVideoExId] = useState<string | null>(null);
   const [tempVideoUrl, setTempVideoUrl] = useState<string>('');
+  const [showPendingFinalize, setShowPendingFinalize] = useState(false);
 
   const getWorkoutTabLabel = (w: Workout, index: number): string => {
     if (w.ai_generated) {
@@ -75,6 +77,13 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   };
 
   const currentWorkout = workouts.find((w) => w.id === selectedWorkoutId) || workouts[0];
+
+  const lastLoggedWorkout = lastWorkoutLog
+    ? workouts.find(w => w.id === lastWorkoutLog.workout_id)
+    : undefined;
+  const lastWorkoutLabel = lastLoggedWorkout
+    ? getWorkoutTabLabel(lastLoggedWorkout, workouts.indexOf(lastLoggedWorkout))
+    : (lastWorkoutLog?.workout_title || 'Treino realizado');
 
   const totalExercises = currentWorkout?.exercises?.length || 0;
   const completedExercises = currentWorkout?.exercises?.filter((e) => e.completed).length || 0;
@@ -158,6 +167,16 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
     onConfirmWorkoutResult();
   };
 
+  const handleFinalizeClick = () => {
+    if (!currentWorkout) return;
+    const pending = (currentWorkout.exercises || []).filter(e => !e.completed).length;
+    if (pending > 0) {
+      setShowPendingFinalize(true);
+    } else {
+      onToggleWorkout(currentWorkout.id);
+    }
+  };
+
   const getYoutubeEmbedUrl = (url?: string) => {
     if (!url) return null;
     if (url.includes('youtube.com/watch?v=')) {
@@ -212,7 +231,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
           <div className="flex items-center space-x-2 text-slate-300">
             <Clock className="w-4 h-4 text-blue-400" />
             <span className="font-bold">Último treino realizado:</span>
-            <span className="font-black text-white">{lastWorkoutLog.workout_title}</span>
+            <span className="font-black text-white">{lastWorkoutLabel}</span>
             <span className="text-slate-500">· {formatDate(lastWorkoutLog.completed_at)}</span>
           </div>
           <div className="flex items-center space-x-4 ml-auto text-slate-400">
@@ -262,7 +281,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                 <div className="text-lg font-black text-emerald-400">{completedExercises}/{totalExercises} exercícios ({progressPct}%)</div>
               </div>
               <button
-                onClick={() => onToggleWorkout(currentWorkout.id)}
+                onClick={handleFinalizeClick}
                 className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition-all ${
                   currentWorkout.is_completed
                     ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300 shadow-glow-emerald'
@@ -676,7 +695,41 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
         </div>
       )}
 
-      {/* 5. Resumo do Treino Finalizado */}
+      {/* 5. Aviso de exercícios pendentes ao finalizar */}
+      {showPendingFinalize && currentWorkout && (
+        <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-dark-900 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl text-center">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-black text-white">Exercícios pendentes</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Ainda existem <b className="text-amber-300">{((currentWorkout.exercises || []).filter(e => !e.completed).length)} exercício(s)</b> não concluído(s) neste treino. Deseja finalizar mesmo assim?
+              </p>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setShowPendingFinalize(false)}
+                className="flex-1 py-3 rounded-xl bg-dark-850 border border-slate-700 hover:bg-dark-800 text-slate-200 font-bold text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowPendingFinalize(false);
+                  onToggleWorkout(currentWorkout.id);
+                }}
+                className="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-glow-amber"
+              >
+                Finalizar mesmo assim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Resumo do Treino Finalizado */}
       {workoutResult && (
         <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-dark-900 border border-emerald-500/40 rounded-3xl p-6 lg:p-8 max-w-md w-full space-y-5 shadow-2xl text-center">

@@ -644,7 +644,26 @@ export function useAppStore() {
     });
   };
 
-  const confirmWorkoutResult = () => setWorkoutResult(null);
+  const confirmWorkoutResult = () => {
+    if (workoutResult) {
+      const wid = workoutResult.workoutId;
+      setWorkouts(prev =>
+        prev.map(w => {
+          if (w.id !== wid) return w;
+          const exercises = (w.exercises || []).map(ex => ({
+            ...ex,
+            completed: false,
+            sets_data: (ex.sets_data || []).map(s => ({ ...s, completed: false }))
+          }));
+          if (isSupabaseConfigured()) exercises.forEach(syncWorkoutExercise);
+          syncWorkout({ ...w, exercises, is_completed: false, last_completed_at: w.last_completed_at ?? null });
+          return { ...w, exercises, is_completed: false };
+        })
+      );
+      setSessionStartedAt(null);
+    }
+    setWorkoutResult(null);
+  };
 
   // Auto-finaliza o treino quando todos os exercícios são concluídos
   useEffect(() => {

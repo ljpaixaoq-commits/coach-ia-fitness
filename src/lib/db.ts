@@ -346,10 +346,16 @@ export function syncWorkoutExercise(ex: WorkoutExercise) {
 }
 
 export function deleteWorkout(id: string) {
-  return remove('treinos', id);
+  return deleteWorkouts([id]);
 }
 
-export function deleteWorkouts(ids: string[]) {
+export async function deleteWorkouts(ids: string[]) {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase
+    .from('treino_exercicios')
+    .delete()
+    .in('workout_id', ids);
+  if (error) console.error('Delete treino_exercicios:', error);
   return Promise.all(ids.map((id) => remove('treinos', id)));
 }
 
