@@ -8,7 +8,7 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
   if (hour >= 12 && hour < 18) {
     prefix = 'Boa tarde';
     period = 'tarde';
-  } else if (hour >= 18 || hour < 5) {
+  } else if (hour >= 18) {
     prefix = 'Boa noite';
     period = 'noite';
   }
