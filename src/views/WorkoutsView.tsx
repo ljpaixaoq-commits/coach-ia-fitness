@@ -51,8 +51,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
     workouts[0]?.id || ''
   );
   const [activeVideoModal, setActiveVideoModal] = useState<WorkoutExercise | null>(null);
-  const [editingWeightExId, setEditingWeightExId] = useState<string | null>(null);
-  const [tempWeight, setTempWeight] = useState<string>('');
+  const [tempWeights, setTempWeights] = useState<Record<string, string>>({});
   const [editingSetWeightKey, setEditingSetWeightKey] = useState<string | null>(null);
   const [tempSetWeight, setTempSetWeight] = useState<string>('');
   const [editingDurationExId, setEditingDurationExId] = useState<string | null>(null);
@@ -94,10 +93,10 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   };
 
   const handleSaveWeight = (workoutId: string, exerciseId: string) => {
-    const val = parseFloat(tempWeight);
+    const val = parseFloat(tempWeights[exerciseId] ?? '');
     if (!isNaN(val) && val >= 0) {
       onUpdateWeight(workoutId, exerciseId, val);
-      setEditingWeightExId(null);
+      setTempWeights(prev => ({ ...prev, [exerciseId]: String(val) }));
     }
   };
 
@@ -235,7 +234,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
       <div className="space-y-4">
         <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
           <span>Exercícios da Sessão</span>
-          <span className="text-xs normal-case text-slate-500 font-normal">Toque nas séries para registrar a execução · Clique na carga para ajustar o peso por série</span>
+          <span className="text-xs normal-case text-slate-500 font-normal">Defina a carga no campo para aplicar em todas as séries · ou ajuste o peso direto em cada série</span>
         </h4>
 
         <div className="grid grid-cols-1 gap-4">
@@ -436,44 +435,37 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                   ) : (
                     // STRENGTH SET-BY-SET TRACKER
                     <div className="space-y-3">
-                      {/* Evolution of Load / Update Weight for future workouts */}
+                      {/* Carga padrão: aplica em todas as séries */}
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs bg-dark-900/60 p-2.5 rounded-xl border border-slate-800">
                         <div className="flex items-center space-x-2">
                           <span className="text-slate-400">Carga Padrão Atual:</span>
                           <span className="text-sm font-black text-blue-400">{ex.default_weight_kg} kg</span>
                         </div>
 
-                        {editingWeightExId === ex.id ? (
-                          <div className="flex items-center space-x-1.5">
-                            <input
-                              type="number"
-                              step="0.5"
-                              value={tempWeight}
-                              onChange={(e) => setTempWeight(e.target.value)}
-                              placeholder="Nova carga"
-                              className="w-20 bg-dark-850 border border-blue-500 rounded-lg px-2 py-1 text-xs text-white font-bold text-center"
-                            />
-                            <span className="text-slate-400">kg</span>
-                            <button
-                              onClick={() => handleSaveWeight(currentWorkout.id, ex.id)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center space-x-1 hover:bg-emerald-500 shadow-sm"
-                            >
-                              <Save className="w-3.5 h-3.5" />
-                              <span>Salvar</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setEditingWeightExId(ex.id);
-                              setTempWeight(String(ex.default_weight_kg));
+                        <div className="flex items-center space-x-1.5">
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            value={tempWeights[ex.id] ?? String(ex.default_weight_kg)}
+                            onChange={(e) => setTempWeights(prev => ({ ...prev, [ex.id]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveWeight(currentWorkout.id, ex.id);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 text-[11px] font-bold flex items-center space-x-1 border border-slate-700"
-                            title="Evoluir carga para os próximos treinos"
+                            placeholder="Nova carga"
+                            className="w-20 bg-dark-850 border border-slate-600 focus:border-blue-500 rounded-lg px-2 py-1 text-xs text-white font-bold text-center outline-none transition-colors"
+                            title="Digite a carga e aplique em todas as séries"
+                          />
+                          <span className="text-slate-400">kg</span>
+                          <button
+                            onClick={() => handleSaveWeight(currentWorkout.id, ex.id)}
+                            className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center space-x-1 transition-all shadow-sm"
+                            title="Aplicar esta carga em todas as séries"
                           >
-                            <span>📈 Registrar Evolução de Carga</span>
+                            <Save className="w-3.5 h-3.5" />
+                            <span>Aplicar em todas</span>
                           </button>
-                        )}
+                        </div>
                       </div>
 
                       {/* Interactive Sets Grid */}
