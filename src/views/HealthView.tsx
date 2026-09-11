@@ -60,7 +60,7 @@ export const HealthView: React.FC<HealthViewProps> = ({
         <div>
           <h2 className="text-2xl font-black text-white tracking-tight flex items-center space-x-2">
             <HeartPulse className="w-6 h-6 text-rose-400" />
-            <span>Saúde & Histórico de Lesão/Dor</span>
+            <span>Saúde & Histórico de Lesão e Dor</span>
           </h2>
           <p className="text-xs text-slate-400">
             Acompanhamento contínuo de dores, lesões (ex: joelho direito), pressão arterial e exames.
