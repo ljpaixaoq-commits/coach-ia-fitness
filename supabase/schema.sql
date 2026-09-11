@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS treino_exercicios (
     demo_instructions TEXT,
     order_index INTEGER DEFAULT 0,
     is_completed BOOLEAN DEFAULT FALSE, -- indica se o exercício foi finalizado
+    sets_data JSONB, -- séries do exercício (set_number, reps_target, weight_kg, completed)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT fk_treino_exercicios_treino FOREIGN KEY (workout_id) REFERENCES treinos(id) ON DELETE CASCADE
 );

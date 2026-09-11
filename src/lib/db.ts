@@ -31,6 +31,14 @@ export interface AllData {
   messages: AICoachMessage[];
 }
 
+function safeJsonParse<T>(value: string, fallback: T): T {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 // ── Load All Data ──────────────────────────────────────────────
 export async function loadAllData(): Promise<AllData | null> {
   if (!isSupabaseConfigured()) return null;
@@ -70,6 +78,23 @@ export async function loadAllData(): Promise<AllData | null> {
   const exercisesByWorkout = new Map<string, WorkoutExercise[]>();
   (exercisesRes.data || []).forEach((ex: any) => {
     if (!exercisesByWorkout.has(ex.workout_id)) exercisesByWorkout.set(ex.workout_id, []);
+
+    let setsData = Array.isArray(ex.sets_data)
+      ? ex.sets_data
+      : typeof ex.sets_data === 'string'
+        ? safeJsonParse(ex.sets_data, [])
+        : null;
+
+    if (!setsData || setsData.length === 0) {
+      const setCount = Math.max(1, ex.sets || 0);
+      setsData = Array.from({ length: setCount }, (_, i) => ({
+        set_number: i + 1,
+        reps_target: ex.reps_target || '',
+        weight_kg: ex.default_weight_kg || 0,
+        completed: false
+      }));
+    }
+
     exercisesByWorkout.get(ex.workout_id)!.push({
       id: ex.id,
       workout_id: ex.workout_id,
@@ -85,7 +110,8 @@ export async function loadAllData(): Promise<AllData | null> {
       video_gif_url: ex.video_gif_url,
       demo_instructions: ex.demo_instructions,
       order_index: ex.order_index || 0,
-      completed: ex.is_completed ?? false
+      completed: ex.is_completed ?? false,
+      sets_data: setsData
     });
   });
 
@@ -247,6 +273,7 @@ export async function seedInitialData(data: AllData): Promise<boolean> {
             return {
               ...exerciseColumns,
               exercise_type: ex.exercise_type || 'strength',
+              sets_data: sets_data ?? null,
               is_completed: completed ?? false
             };
           }),
@@ -337,11 +364,12 @@ export function syncWorkout(w: Workout) {
 }
 
 export function syncWorkoutExercise(ex: WorkoutExercise) {
-  const { id, workout_id, name, muscle_group, exercise_type, sets, reps_target, default_weight_kg, duration_minutes, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index, completed } = ex;
+  const { id, workout_id, name, muscle_group, exercise_type, sets, reps_target, default_weight_kg, duration_minutes, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index, completed, sets_data } = ex;
   return upsert('treino_exercicios', {
     id, workout_id, name, muscle_group, exercise_type, sets, reps_target, default_weight_kg,
     duration_minutes, rest_time_seconds,
     video_url, video_gif_url, demo_instructions, order_index,
+    sets_data: sets_data ?? null,
     is_completed: completed ?? false
   });
 }
