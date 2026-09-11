@@ -120,6 +120,10 @@ export function App() {
               onUpdateDuration={store.updateExerciseDuration}
               onUpdateVideo={store.updateExerciseVideo}
               onStartRestTimer={store.startRestTimer}
+              cardioTimer={store.cardioTimer}
+              cardioRemaining={store.cardioRemaining}
+              onStartCardioTimer={store.startCardioTimer}
+              onStopCardioTimer={store.stopCardioTimer}
               onAskAIForAdaptation={(prompt) => {
                 store.sendAICoachMessage(prompt);
                 store.setActiveTab('aicoach');

@@ -337,9 +337,10 @@ export function syncWorkout(w: Workout) {
 }
 
 export function syncWorkoutExercise(ex: WorkoutExercise) {
-  const { id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index, completed } = ex;
+  const { id, workout_id, name, muscle_group, exercise_type, sets, reps_target, default_weight_kg, duration_minutes, rest_time_seconds, video_url, video_gif_url, demo_instructions, order_index, completed } = ex;
   return upsert('treino_exercicios', {
-    id, workout_id, name, muscle_group, sets, reps_target, default_weight_kg, rest_time_seconds,
+    id, workout_id, name, muscle_group, exercise_type, sets, reps_target, default_weight_kg,
+    duration_minutes, rest_time_seconds,
     video_url, video_gif_url, demo_instructions, order_index,
     is_completed: completed ?? false
   });

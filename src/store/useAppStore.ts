@@ -267,6 +267,8 @@ export function useAppStore() {
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [restTimeRemaining, setRestTimeRemaining] = useState<number | null>(null);
   const [isResting, setIsResting] = useState<boolean>(false);
+  const [cardioTimer, setCardioTimer] = useState<{ workoutId: string; exerciseId: string; endsAt: number } | null>(null);
+  const [cardioRemaining, setCardioRemaining] = useState<number | null>(null);
 
   // Sessão de treino / Histórico de treinos realizados
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>(() => {
@@ -467,6 +469,41 @@ export function useAppStore() {
     }
     return () => clearInterval(interval);
   }, [isResting, restTimeRemaining]);
+
+  // Cardio Countdown: ao chegar a zero, marca o exercício como realizado
+  useEffect(() => {
+    if (!cardioTimer) return;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.round((cardioTimer.endsAt - Date.now()) / 1000));
+      setCardioRemaining(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        const timer = cardioTimer;
+        setCardioTimer(null);
+        setCardioRemaining(null);
+
+        setWorkouts(prev =>
+          prev.map(w => {
+            if (w.id !== timer.workoutId || !w.exercises) return w;
+            return {
+              ...w,
+              exercises: w.exercises.map(ex => {
+                if (ex.id !== timer.exerciseId || ex.completed) return ex;
+                const done = { ...ex, completed: true };
+                if (isSupabaseConfigured()) syncWorkoutExercise(done);
+                return done;
+              })
+            };
+          })
+        );
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardioTimer]);
 
   // Profile Specific Filters
   const userWorkouts = workouts.filter(w => w.profile_id === activeProfile.id);
@@ -727,19 +764,20 @@ export function useAppStore() {
       prev.map(w => {
         if (w.id !== workoutId || !w.exercises) return w;
 
-        return {
-          ...w,
-          exercises: w.exercises.map(ex => {
-            if (ex.id !== exerciseId) return ex;
+        const updatedEx = w.exercises.map(ex => {
+          if (ex.id !== exerciseId) return ex;
 
-            return {
-              ...ex,
-              duration_minutes: newDurationMin,
-              reps_target: `${newDurationMin} min`,
-              sets_data: (ex.sets_data || []).map(s => ({ ...s, reps_target: `${newDurationMin} min` }))
-            };
-          })
-        };
+          return {
+            ...ex,
+            duration_minutes: newDurationMin,
+            reps_target: `${newDurationMin} min`,
+            sets_data: (ex.sets_data || []).map(s => ({ ...s, reps_target: `${newDurationMin} min` }))
+          };
+        });
+
+        const target = updatedEx.find(ex => ex.id === exerciseId);
+        if (target) syncWorkoutExercise(target);
+        return { ...w, exercises: updatedEx };
       })
     );
   };
@@ -769,6 +807,18 @@ export function useAppStore() {
   const cancelRestTimer = () => {
     setIsResting(false);
     setRestTimeRemaining(null);
+  };
+
+  const startCardioTimer = (workoutId: string, exerciseId: string, durationSeconds: number) => {
+    const seconds = Math.max(1, Math.round(durationSeconds));
+    setCardioTimer({ workoutId, exerciseId, endsAt: Date.now() + seconds * 1000 });
+    setCardioRemaining(seconds);
+    if (!sessionStartedAt) setSessionStartedAt(new Date().toISOString());
+  };
+
+  const stopCardioTimer = () => {
+    setCardioTimer(null);
+    setCardioRemaining(null);
   };
 
   // Nutrition Actions
@@ -996,6 +1046,10 @@ export function useAppStore() {
     restTimeRemaining,
     startRestTimer,
     cancelRestTimer,
+    cardioTimer,
+    cardioRemaining,
+    startCardioTimer,
+    stopCardioTimer,
     meals: todayMeals,
     allMeals: meals,
     todayCalories,

@@ -36,6 +36,10 @@ interface WorkoutsViewProps {
   onUpdateDuration: (workoutId: string, exerciseId: string, newDurationMin: number) => void;
   onUpdateVideo: (workoutId: string, exerciseId: string, videoUrl: string) => void;
   onStartRestTimer: (seconds: number) => void;
+  cardioTimer: { workoutId: string; exerciseId: string; endsAt: number } | null;
+  cardioRemaining: number | null;
+  onStartCardioTimer: (workoutId: string, exerciseId: string, durationSeconds: number) => void;
+  onStopCardioTimer: () => void;
   onAskAIForAdaptation: (prompt: string) => void;
   onConfirmWorkoutResult: () => void;
 }
@@ -52,6 +56,10 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
   onUpdateDuration,
   onUpdateVideo,
   onStartRestTimer,
+  cardioTimer,
+  cardioRemaining,
+  onStartCardioTimer,
+  onStopCardioTimer,
   onAskAIForAdaptation,
   onConfirmWorkoutResult
 }) => {
@@ -144,6 +152,17 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
     if (h > 0) return `${h}h ${m}min ${s}s`;
     if (m > 0) return `${m}min ${s}s`;
     return `${s}s`;
+  };
+
+  const cardioSeconds = (ex: WorkoutExercise): number => {
+    const mins = ex.duration_minutes || parseFloat((ex.reps_target || '').match(/(\d+)/)?.[1] || '20');
+    return Math.max(1, Math.round(mins * 60));
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const formatDate = (iso?: string) => {
@@ -321,6 +340,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
         <div className="grid grid-cols-1 gap-4">
           {currentWorkout?.exercises?.map((ex, idx) => {
             const isCardio = ex.exercise_type === 'cardio';
+            const isCardioRunning = isCardio && cardioTimer?.exerciseId === ex.id;
 
             return (
               <div
@@ -501,16 +521,38 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({
                           </button>
                         )}
 
-                        <button
-                          onClick={() => onToggleExercise(currentWorkout.id, ex.id)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                            ex.completed
-                              ? 'bg-emerald-600 text-white shadow-glow-emerald'
-                              : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                          }`}
-                        >
-                          {ex.completed ? 'Cardio Concluído ✔' : 'Finalizar Cardio'}
-                        </button>
+                        {isCardioRunning ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="px-3 py-2 rounded-xl bg-cyan-600/20 border border-cyan-500/60 text-cyan-200 font-black text-sm tabular-nums flex items-center space-x-1.5 shadow-glow-cyan">
+                              <Timer className="w-4 h-4 animate-pulse" />
+                              <span>{formatCountdown(cardioRemaining ?? 0)}</span>
+                            </div>
+                            <button
+                              onClick={onStopCardioTimer}
+                              className="px-3 py-2 rounded-xl bg-dark-800 hover:bg-dark-750 border border-slate-700 text-slate-300 text-xs font-bold hover:text-white transition-all"
+                              title="Parar o cronômetro de cardio"
+                            >
+                              Parar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => onStartCardioTimer(currentWorkout.id, ex.id, cardioSeconds(ex))}
+                            disabled={ex.completed}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                              ex.completed
+                                ? 'bg-emerald-600 text-white shadow-glow-emerald cursor-default'
+                                : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-glow-cyan'
+                            }`}
+                          >
+                            {ex.completed ? (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5" />
+                            )}
+                            <span>{ex.completed ? 'Cardio Concluído ✔' : `Iniciar (${formatDuration(cardioSeconds(ex))})`}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : (
