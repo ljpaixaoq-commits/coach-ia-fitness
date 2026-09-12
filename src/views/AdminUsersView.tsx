@@ -20,6 +20,39 @@ import {
 
 type FilterStatus = 'all' | 'active' | 'pending' | 'inactive' | 'expired';
 
+function buildDate(day: string, month: string, year: string): { value: string; error: string | null } {
+  const dd = parseInt(day, 10) || 0;
+  const mm = parseInt(month, 10) || 0;
+  const yyyy = year.length === 4 ? parseInt(year, 10) : 0;
+  const fullYear = new Date().getFullYear();
+  if (!dd || dd > 31) return { value: '', error: 'Informe um dia válido (1 a 31).' };
+  if (!mm || mm > 12) return { value: '', error: 'Informe um mês válido (1 a 12).' };
+  if (!yyyy || yyyy < 1900 || yyyy > fullYear) return { value: '', error: `Informe um ano válido (1900 a ${fullYear}).` };
+  return { value: `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`, error: null };
+}
+
+const BirthDateFields: React.FC<{
+  day: string;
+  month: string;
+  year: string;
+  onDayChange: (v: string) => void;
+  onMonthChange: (v: string) => void;
+  onYearChange: (v: string) => void;
+}> = ({ day, month, year, onDayChange, onMonthChange, onYearChange }) => {
+  const fieldClass = "w-full bg-dark-850 border border-slate-700 rounded-xl p-2.5 text-white text-sm text-center focus:outline-none focus:border-blue-500 transition-colors";
+  const digitsOnly = (v: string, max: number) => v.replace(/\D/g, '').slice(0, max);
+  return (
+    <div>
+      <div className="mb-1 text-xs text-slate-400">Data de nascimento</div>
+      <div className="grid grid-cols-3 gap-2">
+        <input className={fieldClass} type="text" inputMode="numeric" maxLength={2} required value={day} onChange={(e) => onDayChange(digitsOnly(e.target.value, 2))} placeholder="Dia" aria-label="Dia" />
+        <input className={fieldClass} type="text" inputMode="numeric" maxLength={2} required value={month} onChange={(e) => onMonthChange(digitsOnly(e.target.value, 2))} placeholder="Mês" aria-label="Mês" />
+        <input className={fieldClass} type="text" inputMode="numeric" maxLength={4} required value={year} onChange={(e) => onYearChange(digitsOnly(e.target.value, 4))} placeholder="Ano" aria-label="Ano" />
+      </div>
+    </div>
+  );
+};
+
 interface AdminUsersViewProps {
   users: UserWithProfile[];
   isAdmin: boolean;
@@ -42,7 +75,9 @@ const EditUserModal: React.FC<{
   const [nickname, setNickname] = useState(user.profile?.nickname || '');
   const [avatarUrl, setAvatarUrl] = useState(user.profile?.avatar_url || '');
   const [cpf, setCpf] = useState(user.profile?.cpf || '');
-  const [birthDate, setBirthDate] = useState(user.profile?.birth_date || '');
+  const [birthDay, setBirthDay] = useState(user.profile?.birth_date?.split('-')[2] || '');
+  const [birthMonth, setBirthMonth] = useState(user.profile?.birth_date?.split('-')[1] || '');
+  const [birthYear, setBirthYear] = useState(user.profile?.birth_date?.split('-')[0] || '');
   const [email, setEmail] = useState(user.profile?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [showPasswordField, setShowPasswordField] = useState(false);
@@ -62,6 +97,12 @@ const EditUserModal: React.FC<{
     setError('');
     const digits = cpf.replace(/\D/g, '');
     if (digits.length !== 11) { setError('CPF deve ter 11 dígitos.'); return; }
+    let birthDate = '';
+    if (birthDay || birthMonth || birthYear) {
+      const r = buildDate(birthDay, birthMonth, birthYear);
+      if (r.error) { setError(r.error); return; }
+      birthDate = r.value;
+    }
     setSaving(true);
     try {
       await onSave({ name: name.trim(), nickname: nickname.trim(), avatar_url: avatarUrl || undefined, cpf: digits, birth_date: birthDate, email: email || undefined });
@@ -100,7 +141,7 @@ const EditUserModal: React.FC<{
           <input className={inputClass} type="text" placeholder="Apelido" value={nickname} onChange={(e) => setNickname(e.target.value)} />
           <input className={inputClass} type="text" placeholder="URL do avatar (opcional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
           <input className={inputClass} type="text" placeholder="CPF" value={cpf} onChange={(e) => setCpf(fmtCPF(e.target.value))} />
-          <input className={inputClass} type="date" placeholder="Data de nascimento" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+          <BirthDateFields day={birthDay} month={birthMonth} year={birthYear} onDayChange={setBirthDay} onMonthChange={setBirthMonth} onYearChange={setBirthYear} />
           <input className={inputClass} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <button onClick={handleSave} disabled={saving} className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center space-x-2 disabled:opacity-60">
@@ -137,7 +178,9 @@ const CreateUserModal: React.FC<{
   const [nickname, setNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [cpf, setCpf] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthYear, setBirthYear] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -159,7 +202,9 @@ const CreateUserModal: React.FC<{
     if (!nickname.trim()) { setError('Informe o apelido.'); return; }
     const digits = cpf.replace(/\D/g, '');
     if (digits.length !== 11) { setError('CPF deve ter 11 dígitos.'); return; }
-    if (!birthDate) { setError('Informe a data de nascimento.'); return; }
+    const r = buildDate(birthDay, birthMonth, birthYear);
+    if (r.error) { setError(r.error); return; }
+    const birthDate = r.value;
     if (password.length < 4) { setError('A senha deve ter ao menos 4 caracteres.'); return; }
     if (password !== confirmPassword) { setError('As senhas não coincidem.'); return; }
     setSaving(true);
@@ -186,7 +231,7 @@ const CreateUserModal: React.FC<{
           <input className={inputClass} type="text" placeholder="Apelido*" value={nickname} onChange={(e) => setNickname(e.target.value)} />
           <input className={inputClass} type="text" placeholder="URL do avatar (opcional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
           <input className={inputClass} type="text" placeholder="CPF (somente números)" value={cpf} onChange={(e) => setCpf(fmtCPF(e.target.value))} />
-          <input className={inputClass} type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+          <BirthDateFields day={birthDay} month={birthMonth} year={birthYear} onDayChange={setBirthDay} onMonthChange={setBirthMonth} onYearChange={setBirthYear} />
           <input className={inputClass} type="email" placeholder="E-mail (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={inputClass} type="password" placeholder="Senha (min. 4)" value={password} onChange={(e) => setPassword(e.target.value)} />
           <input className={inputClass} type="password" placeholder="Confirmar senha" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />

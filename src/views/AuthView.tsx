@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Flame, Loader2, Lock, User, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, CalendarDays, Phone } from 'lucide-react';
-import { formatCPF } from '../lib/auth';
+import { formatCPF, formatPhone, onlyDigits } from '../lib/auth';
 
 interface AuthViewProps {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -23,6 +23,60 @@ interface AuthViewProps {
 type Mode = 'login' | 'register' | 'reset';
 type ResetStep = 'identity' | 'new_password';
 
+const BirthDateFields: React.FC<{
+  day: string;
+  month: string;
+  year: string;
+  onDayChange: (v: string) => void;
+  onMonthChange: (v: string) => void;
+  onYearChange: (v: string) => void;
+}> = ({ day, month, year, onDayChange, onMonthChange, onYearChange }) => {
+  const fieldClass = "w-full bg-dark-850 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 text-center focus:outline-none focus:border-blue-500 transition-colors";
+  return (
+    <div>
+      <label className="mb-1.5 flex items-center space-x-1.5 text-xs text-slate-500">
+        <CalendarDays className="w-3.5 h-3.5" />
+        <span>Data de nascimento</span>
+      </label>
+      <div className="grid grid-cols-3 gap-2">
+        <input
+          className={fieldClass}
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          required
+          value={day}
+          onChange={(e) => onDayChange(onlyDigits(e.target.value).slice(0, 2))}
+          placeholder="Dia"
+          aria-label="Dia"
+        />
+        <input
+          className={fieldClass}
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          required
+          value={month}
+          onChange={(e) => onMonthChange(onlyDigits(e.target.value).slice(0, 2))}
+          placeholder="Mês"
+          aria-label="Mês"
+        />
+        <input
+          className={fieldClass}
+          type="text"
+          inputMode="numeric"
+          maxLength={4}
+          required
+          value={year}
+          onChange={(e) => onYearChange(onlyDigits(e.target.value).slice(0, 4))}
+          placeholder="Ano"
+          aria-label="Ano"
+        />
+      </div>
+    </div>
+  );
+};
+
 export const AuthView: React.FC<AuthViewProps> = ({
   onLogin,
   onRegister,
@@ -39,10 +93,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [nickname, setNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [email, setEmail] = useState('');
-  const [birthDate, setBirthDate] = useState('');
   const [phone, setPhone] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthYear, setBirthYear] = useState('');
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Reset flow state
   const [resetStep, setResetStep] = useState<ResetStep>('identity');
@@ -70,12 +127,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
         setSuccess(null);
         return;
       }
+      const birthDate = buildBirthDate();
+      if (!birthDate) return;
       setPending(true);
       try {
         await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl, phone }, password);
         setSuccess('Cadastro realizado! Sua conta será analisada pelo administrador e ativada em breve.');
         setMode('login');
-        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDate(''); setPhone(''); setUsername('');
+        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDay(''); setBirthMonth(''); setBirthYear(''); setPhone(''); setUsername('');
       } catch (err) {
         // error already set in store
       } finally {
@@ -88,6 +147,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
       if (resetStep === 'identity') {
         // Step 1: Validate CPF + birth date
         if (!onValidateReset) return;
+        const birthDate = buildBirthDate();
+        if (!birthDate) return;
         setPending(true);
         try {
           const result = await onValidateReset(username, birthDate);
@@ -104,12 +165,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
       // Step 2: Set new password
       if (password !== confirmPassword) return;
+      const birthDate = buildBirthDate();
+      if (!birthDate) return;
       setPending(true);
       try {
         await onResetPassword(username, birthDate, password);
         setSuccess('Senha redefinida com sucesso! Faça login com a nova senha.');
         setMode('login');
-        setPassword(''); setConfirmPassword(''); setBirthDate(''); setUsername('');
+        setPassword(''); setConfirmPassword(''); setBirthDay(''); setBirthMonth(''); setBirthYear(''); setUsername(''); setFormError(null);
         setResetStep('identity'); setResetAccountId(null); setResetUserName('');
       } catch (err) {
         // error already set in store
@@ -122,17 +185,31 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const goTo = (m: Mode) => {
     setMode(m);
     setSuccess(null);
+    setFormError(null);
     setPassword('');
     setConfirmPassword('');
     setName('');
     setNickname('');
     setAvatarUrl('');
     setEmail('');
-    setBirthDate('');
+    setBirthDay('');
+    setBirthMonth('');
+    setBirthYear('');
     setUsername('');
     setResetStep('identity');
     setResetAccountId(null);
     setResetUserName('');
+  };
+
+  const buildBirthDate = (): string => {
+    const dd = parseInt(birthDay, 10) || 0;
+    const mm = parseInt(birthMonth, 10) || 0;
+    const yyyy = birthYear.length === 4 ? parseInt(birthYear, 10) : 0;
+    const fullYear = new Date().getFullYear();
+    if (!dd || dd > 31) { setFormError('Informe um dia válido (1 a 31).'); return ''; }
+    if (!mm || mm > 12) { setFormError('Informe um mês válido (1 a 12).'); return ''; }
+    if (!yyyy || yyyy < 1900 || yyyy > fullYear) { setFormError(`Informe um ano válido (1900 a ${fullYear}).`); return ''; }
+    return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
   };
 
   const inputClass = "w-full bg-dark-850 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
@@ -171,6 +248,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
             <div className="mb-4 flex items-start space-x-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{authError}</span>
+            </div>
+          )}
+
+          {formError && (
+            <div className="mb-4 flex items-start space-x-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{formError}</span>
             </div>
           )}
 
@@ -236,45 +320,33 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     type="tel"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Telefone"
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    placeholder="(00) 00000-0000"
                   />
                 </div>
 
                 {/* Register: Birth date - required by the API for new users */}
-                <div className="relative">
-                  <CalendarDays className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
-                  <input
-                    className={inputClass + " pl-10"}
-                    type="date"
-                    required
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    style={{ color: birthDate ? undefined : 'transparent' }}
-                    aria-label="Data de nascimento"
-                  />
-                  {!birthDate && (
-                    <span className="absolute left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none select-none">
-                      dd/mm/aaaa
-                    </span>
-                  )}
-                </div>
+                <BirthDateFields
+                  day={birthDay}
+                  month={birthMonth}
+                  year={birthYear}
+                  onDayChange={setBirthDay}
+                  onMonthChange={setBirthMonth}
+                  onYearChange={setBirthYear}
+                />
               </>
             )}
 
             {/* Reset: Birth date - only in identity step */}
             {mode === 'reset' && resetStep === 'identity' && (
-              <div className="relative">
-                <CalendarDays className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
-                <input
-                  className={inputClass + " pl-10"}
-                  type="date"
-                  required
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  placeholder="Data de nascimento"
-                />
-              </div>
+              <BirthDateFields
+                day={birthDay}
+                month={birthMonth}
+                year={birthYear}
+                onDayChange={setBirthDay}
+                onMonthChange={setBirthMonth}
+                onYearChange={setBirthYear}
+              />
             )}
 
             {/* Password fields - login, register, and reset new_password step */}
