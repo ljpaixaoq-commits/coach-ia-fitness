@@ -227,6 +227,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="E-mail (opcional)"
                 />
+
+                {/* Register: Birth date - required by the API for new users */}
+                <div className="relative">
+                  <CalendarDays className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="date"
+                    required
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    placeholder="Data de nascimento"
+                  />
+                </div>
               </>
             )}
 
