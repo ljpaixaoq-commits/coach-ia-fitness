@@ -89,33 +89,44 @@ export function processAICoachPrompt(
   prompt: string,
   profile: Profile,
   todayWorkout?: Workout,
-  injuryLogs: InjuryPainLog[] = []
+  injuryLogs: InjuryPainLog[] = [],
+  allWorkouts: Workout[] = []
 ): AICoachResponse {
   const lower = prompt.toLowerCase();
   const name = profile.nickname || profile.name;
   const { greeting } = getDynamicGreeting(name);
   const kneeLog = injuryLogs.find(i => i.body_part.toLowerCase().includes('joelho'));
   const todayExercises = todayWorkout?.exercises || [];
+  const workoutPool = (allWorkouts.length > 0 ? allWorkouts : todayWorkout ? [todayWorkout] : [])
+    .filter(w => w.exercises && w.exercises.length > 0);
 
   // ── Ajuste: remover um exercício específico ─────────────────
   const wantsRemove = /retirar|remover|excluir|abandonar|tirar (?:do treino|esse|este|desse|deste|o |um )|quero tirar|não gosto|nao gosto/.test(lower);
-  if (wantsRemove && todayExercises.length > 0) {
-    const found = todayExercises.find(e => e.name && lower.includes(e.name.toLowerCase()));
-    if (found) {
+  if (wantsRemove && workoutPool.length > 0) {
+    const hit = workoutPool.flatMap((w, wi) =>
+      (w.exercises || []).map(e => ({ w, wi, e }))
+    ).find(x => x.e.name && lower.includes(x.e.name.toLowerCase()));
+    if (hit) {
+      const { w, wi, e } = hit;
+      const isToday = w.id === todayWorkout?.id;
+      const workoutDesc = isToday ? 'da sua ficha de hoje' : `do seu **Treino ${wi + 1}**`;
       return {
         intent: 'remove_exercise',
-        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha e incluir **outro exercício equivalente no lugar** (se possível do mesmo grupo muscular **${found.muscle_group}**), mantendo sua ficha completa. Clique no botão abaixo para eu aplicar.`,
+        message: `${greeting} Entendi! Vou **remover o "${e.name}"** ${workoutDesc} e incluir **outro exercício equivalente no lugar** (se possível do mesmo grupo muscular **${e.muscle_group}**), mantendo seu treino completo. Clique no botão abaixo para eu aplicar.`,
         suggestedActions: [
-          { action: 'remove_exercise', label: `🗑️ Remover "${found.name}" do treino`, details: 'Remove o exercício e inclui um equivalente no lugar.', workoutId: todayWorkout!.id, exerciseId: found.id, exerciseName: found.name },
-          { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
+          { action: 'remove_exercise', label: `🗑️ Remover "${e.name}"${isToday ? ' do treino de hoje' : ` do Treino ${wi + 1}`}`, details: 'Remove o exercício e inclui um equivalente no lugar.', workoutId: w.id, exerciseId: e.id, exerciseName: e.name },
+          { action: 'list_exercises', label: '👀 Ver exercícios do treino', details: 'Relembrar os exercícios da ficha.' }
         ]
       };
     }
+    const overview = workoutPool.map((w, wi) =>
+      `**Treino ${wi + 1}${w.id === todayWorkout?.id ? ' (hoje)' : ''}:** ${(w.exercises || []).map(e => e.name).join(' · ')}`
+    ).join('\n');
     return {
       intent: 'remove_exercise_not_found',
-      message: `${greeting} Verifiquei sua ficha de hoje (**${todayWorkout?.title || 'Treino do dia'}**) e **não encontrei** esse exercício. Estes são os exercícios atuais:\n\n${todayExercises.map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n')}\n\nMe diga **qual deles** você quer que eu remova.`,
+      message: `${greeting} Não encontrei esse exercício em nenhum dos seus **${workoutPool.length} treinos**. Estes são os exercícios que você tem:\n\n${overview}\n\nMe diga **qual exercício** (e de **qual treino**) você quer que eu remova.`,
       suggestedActions: [
-        { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
+        { action: 'list_exercises', label: '👀 Ver exercícios do treino', details: 'Relembrar os exercícios da ficha.' }
       ]
     };
   }

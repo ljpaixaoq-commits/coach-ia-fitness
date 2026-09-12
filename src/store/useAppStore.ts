@@ -958,7 +958,7 @@ export function useAppStore() {
     syncMessage(userMsg);
 
     setTimeout(() => {
-      const response = processAICoachPrompt(userText, activeProfile, todayWorkout, userInjuries);
+      const response = processAICoachPrompt(userText, activeProfile, todayWorkout, userInjuries, userWorkouts);
       const aiMsg: AICoachMessage = {
         id: `msg-ai-${Date.now()}`,
         profile_id: activeProfile.id,
