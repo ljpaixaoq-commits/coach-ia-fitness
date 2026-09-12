@@ -101,7 +101,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
             <p className="text-lg font-bold text-white">{activeProfile.nickname || activeProfile.name}</p>
             <p className="text-xs text-slate-400 capitalize flex items-center space-x-1">
               <Shield className="w-3.5 h-3.5 text-blue-400" />
-              <span>{activeProfile.role === 'admin' ? 'Admin' : 'Membro'}</span>
+              <span>{activeProfile.role === 'admin' ? 'Admin' : 'Usuário'}</span>
             </p>
             {activeProfile.email && (
               <p className="text-xs text-slate-500 flex items-center space-x-1">
