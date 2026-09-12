@@ -39,9 +39,9 @@ export function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
-  // Reset scroll position when switching tabs (main is the scroll container on desktop)
+  // Reset SOMENTE o scroll do conteúdo (main) ao trocar de aba —
+  // o menu lateral (sidebar) deve permanecer na mesma posição.
   useEffect(() => {
-    window.scrollTo(0, 0);
     mainRef.current?.scrollTo?.(0, 0);
   }, [store.activeTab]);
 
