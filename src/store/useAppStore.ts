@@ -1007,10 +1007,10 @@ export function useAppStore() {
           coachReply('Você ainda não possui um treino salvo com exercícios.');
           return;
         }
-        const blocks = withEx.map(w => {
+        const blocks = withEx.map((w, wi) => {
           const items = (w.exercises || []).map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n');
           const tag = w.id === targetWorkout?.id ? ' — **hoje**' : '';
-          return `**${w.title || 'Treino'}${tag}:**\n${items}`;
+          return `**Treino ${wi + 1}${tag}:**\n${items}`;
         });
         coachReply(`📋 **Sua ficha completa (${withEx.length} ${withEx.length === 1 ? 'treino' : 'treinos'}):**\n\n${blocks.join('\n\n')}`);
         return;
