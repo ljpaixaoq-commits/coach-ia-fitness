@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmi
   }
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-dark-950 border-r border-line/80 p-4 space-y-6 shrink-0 min-h-screen">
+    <aside className="hidden lg:flex flex-col w-64 bg-dark-950 border-r border-line/80 p-4 space-y-6 shrink-0 h-full overflow-y-auto">
       <div className="space-y-1">
         <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-content-muted">Módulos do Sistema</p>
         <nav className="space-y-1 pt-2">

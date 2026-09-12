@@ -74,7 +74,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-primary text-content-primary flex flex-col font-sans">
+    <div className="h-screen overflow-hidden bg-surface-primary text-content-primary flex flex-col font-sans">
       {/* 1. Header */}
       <Header
         activeProfile={store.activeProfile}
