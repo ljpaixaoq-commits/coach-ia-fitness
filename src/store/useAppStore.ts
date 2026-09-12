@@ -14,7 +14,8 @@ import {
   Goal,
   AICoachMessage,
   AIDailySummary,
-  SuggestedAction
+  SuggestedAction,
+  CoachHistoryResult
 } from '../types';
 import {
   INITIAL_PROFILES,
@@ -58,6 +59,7 @@ import {
   updateUserPasswordAdmin,
   uploadAvatar,
   updateProfileAvatarUrl,
+  fetchMessageHistory,
   UserWithProfile,
   RegisterInput
 } from '../lib/db';
@@ -403,8 +405,17 @@ export function useAppStore() {
   }, [goals]);
 
   useEffect(() => {
-    localStorage.setItem('coach_ai_messages', JSON.stringify(messages));
+    localStorage.setItem('coach_ai_messages', JSON.stringify(messages.slice(-150)));
   }, [messages]);
+
+  // AI Coach History (consulta por fluxo/período, sem carregar tudo)
+  const [coachHistory, setCoachHistory] = useState<CoachHistoryResult>({ limited: false, items: [] });
+
+  const loadCoachHistory = async (fromIso: string, toIso: string) => {
+    if (!activeProfile) return;
+    const result = await fetchMessageHistory(activeProfile.id, fromIso, toIso);
+    setCoachHistory(result);
+  };
 
   const refreshFromDB = (data: AllData) => {
     if (!data) return;
@@ -1207,6 +1218,8 @@ export function useAppStore() {
     messages: userMessages,
     sendAICoachMessage,
     handleCoachAction,
+    coachHistory,
+    loadCoachHistory,
     generateAndSaveWorkout,
     clearWorkouts,
     smartDailySummary

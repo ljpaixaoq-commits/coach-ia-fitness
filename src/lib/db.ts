@@ -15,6 +15,9 @@ import {
   EvolutionPhoto,
   Goal,
   AICoachMessage,
+  CoachFlow,
+  CoachHistoryItem,
+  CoachHistoryResult,
   UserAccount
 } from '../types';
 
@@ -287,6 +290,56 @@ function mapMessage(m: any): AICoachMessage {
   };
 }
 
+const ADJUST_INTENTS: NonNullable<AICoachMessage['intent_type']>[] = [
+  'workout_adjust', 'remove_exercise', 'remove_exercise_not_found',
+  'review_fatigue', 'review_pain', 'workout_too_heavy', 'injury_pain',
+  'energy_low', 'low_sleep'
+];
+
+function classifyCoachFlow(m: AICoachMessage): CoachFlow {
+  const msg = m.message || '';
+  if (/gerad[oa]s?\s+com\s+sucesso/i.test(msg) || /treinos?\s+gerados?/i.test(msg)) return 'criacao';
+  if (m.intent_type === 'progression_advice') return 'melhoria';
+  if (m.intent_type && ADJUST_INTENTS.includes(m.intent_type)) return 'ajuste';
+  return 'conversa';
+}
+
+export async function fetchMessageHistory(profileId: string, fromIso: string, toIso: string): Promise<CoachHistoryResult> {
+  const res = await supabase
+    .from('coach_mensagens')
+    .select('*')
+    .eq('perfil_id', profileId)
+    .gte('criado_em', fromIso)
+    .lte('criado_em', toIso)
+    .order('criado_em', { ascending: true })
+    .limit(301);
+
+  if (res.error) {
+    console.error('fetchMessageHistory:', res.error);
+    return { limited: false, items: [] };
+  }
+
+  const raw: any[] = res.data || [];
+  if (raw.length > 300) return { limited: true, items: [] };
+
+  const items: CoachHistoryItem[] = [];
+  let pendingUser: AICoachMessage | null = null;
+  for (const m of raw.map(mapMessage)) {
+    if (m.sender === 'user') {
+      pendingUser = m;
+      items.push({ flow: 'conversa', message: m });
+    } else {
+      const flow = classifyCoachFlow(m);
+      if (pendingUser && flow !== 'conversa' && items.length > 0) {
+        items[items.length - 1] = { flow, message: pendingUser };
+      }
+      items.push({ flow, message: m });
+      pendingUser = null;
+    }
+  }
+  return { limited: false, items };
+}
+
 function mapAccount(a: any): UserAccount {
   return {
     id: a.id,
@@ -556,7 +609,7 @@ export async function loadAllData(): Promise<AllData | null> {
     supabase.from('registro_lesoes').select('*'),
     supabase.from('fotos_evolucao').select('*'),
     supabase.from('metas').select('*'),
-    supabase.from('coach_mensagens').select('*')
+    supabase.from('coach_mensagens').select('*').order('criado_em', { ascending: false }).limit(150)
   ]);
 
   if (profilesRes.error) { console.error('Load profiles:', profilesRes.error); return null; }
@@ -590,7 +643,7 @@ export async function loadAllData(): Promise<AllData | null> {
     injuries: (injuriesRes.data || []).map(mapInjury),
     photos: (photosRes.data || []).map(mapPhoto),
     goals: (goalsRes.data || []).map(mapGoal),
-    messages: (messagesRes.data || []).map(mapMessage)
+    messages: (messagesRes.data || []).slice().reverse().map(mapMessage)
   };
 }
 

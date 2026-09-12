@@ -149,6 +149,8 @@ export function App() {
               onNavigateTab={(tab) => store.setActiveTab(tab as NavTab)}
               hasWorkouts={store.workouts.length > 0}
               onClearWorkouts={store.clearWorkouts}
+              coachHistory={store.coachHistory}
+              onLoadHistory={store.loadCoachHistory}
             />
           )}
 

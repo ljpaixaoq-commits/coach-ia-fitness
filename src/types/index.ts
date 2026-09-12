@@ -257,6 +257,8 @@ export interface SuggestedAction {
   exerciseName?: string;
 }
 
+export type CoachFlow = 'ajuste' | 'melhoria' | 'criacao' | 'conversa';
+
 export interface AICoachMessage {
   id: string;
   profile_id: string;
@@ -264,7 +266,18 @@ export interface AICoachMessage {
   message: string;
   intent_type?: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust';
   suggested_actions?: SuggestedAction[];
+  flow?: CoachFlow;
   created_at: string;
+}
+
+export interface CoachHistoryItem {
+  flow: CoachFlow;
+  message: AICoachMessage;
+}
+
+export interface CoachHistoryResult {
+  limited: boolean;
+  items: CoachHistoryItem[];
 }
 
 export interface AIDailySummary {

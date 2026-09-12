@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Profile, AICoachMessage, SuggestedAction, Workout, InjuryPainLog } from '../types';
+import { Profile, AICoachMessage, SuggestedAction, Workout, InjuryPainLog, CoachFlow, CoachHistoryResult } from '../types';
 import { WorkoutGoal } from '../lib/ai-coach';
 import {
   Bot,
@@ -13,7 +13,12 @@ import {
   CheckCircle2,
   ArrowLeft,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  History as HistoryIcon,
+  CalendarDays,
+  ClipboardList,
+  Wand2,
+  Rocket
 } from 'lucide-react';
 
 interface AICoachViewProps {
@@ -27,9 +32,17 @@ interface AICoachViewProps {
   onNavigateTab: (tab: string) => void;
   hasWorkouts: boolean;
   onClearWorkouts: () => void;
+  coachHistory: CoachHistoryResult;
+  onLoadHistory: (fromIso: string, toIso: string) => Promise<void>;
 }
 
-type CoachMode = 'home' | 'create' | 'adjust' | 'improve' | 'chat';
+type CoachMode = 'home' | 'create' | 'adjust' | 'improve' | 'chat' | 'history';
+
+const HISTORY_TABS: { flow: CoachFlow; label: string; desc: string; icon: any; color: string }[] = [
+  { flow: 'ajuste', label: 'Ajuste de treino', desc: 'Remoções, revisões e adaptações de treino', icon: ClipboardList, color: 'from-amber-500/20 to-orange-600/20 text-amber-300 border-amber-500/30' },
+  { flow: 'criacao', label: 'Criação de treino', desc: 'Treinos e variações gerados pelo Coach', icon: Rocket, color: 'from-blue-500/20 to-indigo-600/20 text-blue-300 border-blue-500/30' },
+  { flow: 'melhoria', label: 'Melhorias de treino', desc: 'Orientações de evolução e progressão', icon: Wand2, color: 'from-emerald-500/20 to-teal-600/20 text-emerald-300 border-emerald-500/30' }
+];
 type CreateStep = 'objective' | 'limitations' | 'details' | 'variations' | 'confirm';
 
 const OBJECTIVES = [
@@ -66,12 +79,55 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   onGenerateWorkout,
   onNavigateTab,
   hasWorkouts,
-  onClearWorkouts
+  onClearWorkouts,
+  coachHistory,
+  onLoadHistory
 }) => {
   const [mode, setMode] = useState<CoachMode>('home');
   const [inputText, setInputText] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // History flow
+  const [historyTab, setHistoryTab] = useState<CoachFlow | null>(null);
+  const [historyFrom, setHistoryFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [historyTo, setHistoryTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const chatMessages = messages.slice(-30);
+
+  const goHistory = () => {
+    setHistoryTab(null);
+    setMode('history');
+  };
+
+  const consultHistory = async (tab: CoachFlow) => {
+    if (!historyFrom || !historyTo) return;
+    const fromIso = new Date(`${historyFrom}T00:00:00`).toISOString();
+    const toIso = new Date(`${historyTo}T23:59:59.999`).toISOString();
+    setHistoryLoading(true);
+    try {
+      await onLoadHistory(fromIso, toIso);
+      setHistoryTab(tab);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const daysBetween = () => {
+    if (!historyFrom || !historyTo) return null;
+    const a = new Date(`${historyFrom}T00:00:00`).getTime();
+    const b = new Date(`${historyTo}T00:00:00`).getTime();
+    return Math.round((b - a) / 86400000) + 1;
+  };
+
+  const visibleHistory = coachHistory.limited
+    ? []
+    : coachHistory.items.filter(i => i.flow === historyTab);
 
   // Create Workout flow
   const [createStep, setCreateStep] = useState<CreateStep>('objective');
@@ -280,6 +336,20 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
               Melhorar desempenho <ChevronRight className="w-3.5 h-3.5 ml-1" />
             </div>
           </button>
+
+          <button
+            onClick={goHistory}
+            className="p-5 rounded-2xl bg-dark-900 border border-purple-500/30 hover:border-purple-500/60 transition-all text-left group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <HistoryIcon className="w-5 h-5 text-purple-400" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">Histórico de Conversas</h3>
+            <p className="text-xs text-slate-400">Consultar ajustes, criações e melhorias antigas por período.</p>
+            <div className="mt-3 flex items-center text-purple-400 text-xs font-bold">
+              Consultar <ChevronRight className="w-3.5 h-3.5 ml-1" />
+            </div>
+          </button>
         </div>
 
         {/* Open Chat */}
@@ -318,6 +388,138 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
           </button>
         )}
         {replaceModal}
+      </div>
+    );
+  }
+
+  // ── HISTORY FLOW ─────────────────────────────────────────────
+  if (mode === 'history') {
+    const days = daysBetween();
+    const rangeInvalid = days !== null && days > 30;
+    const flowMeta = historyTab ? HISTORY_TABS.find(t => t.flow === historyTab) : null;
+
+    return (
+      <div className="space-y-5 max-w-2xl pb-16">
+        <div className="flex items-center justify-between">
+          <button onClick={() => setMode('home')} className="flex items-center space-x-1 text-xs font-bold text-slate-400 hover:text-purple-400 transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Voltar</span>
+          </button>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            {historyTab ? flowMeta?.label : 'Histórico de Conversas'}
+          </span>
+        </div>
+
+        {!historyTab ? (
+          <>
+            <div>
+              <h2 className="text-base font-bold text-white">Qual tipo você quer consultar?</h2>
+              <p className="text-xs text-slate-400">Selecione o tipo de interação. Você poderá filtrar por período (máx. 30 dias).</p>
+            </div>
+            <div className="space-y-3">
+              {HISTORY_TABS.map(t => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.flow}
+                    onClick={() => setHistoryTab(t.flow)}
+                    className="w-full p-4 rounded-2xl bg-dark-900 border border-slate-800 hover:border-slate-600 transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${t.color.split(' ')[0]} ${t.color.split(' ')[1]} border ${t.color.split(' ')[3]} flex items-center justify-center`}>
+                        <Icon className={`w-5 h-5 ${t.color.split(' ')[2]}`} />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold text-white">{t.label}</p>
+                        <p className="text-xs text-slate-400">{t.desc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-purple-400 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Filtro de período */}
+            <div className="glass-card rounded-2xl p-4 border border-slate-800 space-y-3">
+              <div className="flex items-center space-x-2">
+                <CalendarDays className="w-4 h-4 text-purple-400" />
+                <h3 className="text-sm font-bold text-white">Filtrar por período</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">De</span>
+                  <input
+                    type="date"
+                    value={historyFrom}
+                    max={historyTo}
+                    onChange={e => setHistoryFrom(e.target.value)}
+                    className="mt-1 w-full bg-dark-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Até</span>
+                  <input
+                    type="date"
+                    value={historyTo}
+                    min={historyFrom}
+                    onChange={e => setHistoryTo(e.target.value)}
+                    className="mt-1 w-full bg-dark-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  />
+                </label>
+              </div>
+              {rangeInvalid && (
+                <p className="text-[11px] font-semibold text-rose-400">
+                  Período de {days} dias excede o máximo de 30 dias permitido.
+                </p>
+              )}
+              <button
+                onClick={() => consultHistory(historyTab)}
+                disabled={!historyFrom || !historyTo || rangeInvalid || historyLoading}
+                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors flex items-center justify-center space-x-2"
+              >
+                {historyLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{historyLoading ? 'Consultando...' : 'Consultar'}</span>
+              </button>
+            </div>
+
+            {/* Resultado */}
+            {coachHistory.limited && (
+              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-sm flex items-start space-x-2">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>
+                  <strong>Limite de 300 mensagens excedido</strong> para o período selecionado.
+                  Reduza o intervalo de datas e consulte novamente.
+                </p>
+              </div>
+            )}
+
+            {!coachHistory.limited && !historyLoading && historyTab && !coachHistory.items.some(i => i.flow === historyTab) && (
+              <p className="text-xs text-slate-400">Nenhuma mensagem encontrada para este tipo no período selecionado.</p>
+            )}
+
+            {!coachHistory.limited && visibleHistory.length > 0 && (
+              <div className="space-y-3">
+                {visibleHistory.map(item => (
+                  <div key={item.message.id} className={`flex ${item.message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
+                      item.message.sender === 'user'
+                        ? 'bg-purple-600/20 border border-purple-500/30 text-white'
+                        : 'bg-dark-900 border border-slate-800 text-slate-300'
+                    }`}>
+                      {item.message.message}
+                      <div className="mt-1 text-[10px] text-slate-500">
+                        {new Date(item.message.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -749,7 +951,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-2xl bg-dark-950/60 border border-slate-800/80 my-2">
-        {messages.map((msg) => {
+        {chatMessages.map((msg) => {
           const isUser = msg.sender === 'user';
           return (
             <div key={msg.id} className={`flex items-start space-x-3 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
