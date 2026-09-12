@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore, NavTab } from './store/useAppStore';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
@@ -37,6 +37,13 @@ export function App() {
   const store = useAppStore();
   const [isSmartSummaryModalOpen, setIsSmartSummaryModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Reset scroll position when switching tabs (main is the scroll container on desktop)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    mainRef.current?.scrollTo?.(0, 0);
+  }, [store.activeTab]);
 
   // Sync theme class on <html> element
   useEffect(() => {
@@ -86,7 +93,7 @@ export function App() {
         <Sidebar activeTab={store.activeTab} onSelectTab={store.setActiveTab} isAdmin={store.currentUser?.role === 'admin'} />
 
         {/* Dynamic Screen View */}
-        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 max-w-7xl mx-auto w-full">
+        <main ref={mainRef} className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 max-w-7xl mx-auto w-full">
           {store.activeTab === 'dashboard' && (
             <DashboardView
               profile={store.activeProfile}
