@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Profile } from '../types';
-import { User, Shield, Calendar, Building, Clock, Droplets, Phone, Mail, Pencil, X, Save } from 'lucide-react';
+import { User, Shield, Calendar, Building, Clock, Droplets, Phone, Mail, Pencil, X, Save, Scale, Target } from 'lucide-react';
 
 interface ProfileViewProps {
   activeProfile: Profile;
@@ -15,8 +15,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
   const [phone, setPhone] = useState(activeProfile.phone || '');
   const [age, setAge] = useState(String(activeProfile.age || ''));
   const [height, setHeight] = useState(String(activeProfile.height || ''));
-  const [currentWeight, setCurrentWeight] = useState(String(activeProfile.current_weight || ''));
-  const [targetWeight, setTargetWeight] = useState(String(activeProfile.target_weight || ''));
+
   const [gymName, setGymName] = useState(activeProfile.gym_name || '');
   const [preferredTime, setPreferredTime] = useState(activeProfile.preferred_training_time || '07:00');
   const [dailyWater, setDailyWater] = useState(String(activeProfile.daily_water_target_ml || 3000));
@@ -28,8 +27,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
     setPhone(activeProfile.phone || '');
     setAge(String(activeProfile.age || ''));
     setHeight(String(activeProfile.height || ''));
-    setCurrentWeight(String(activeProfile.current_weight || ''));
-    setTargetWeight(String(activeProfile.target_weight || ''));
+
     setGymName(activeProfile.gym_name || '');
     setPreferredTime(activeProfile.preferred_training_time || '07:00');
     setDailyWater(String(activeProfile.daily_water_target_ml || 3000));
@@ -45,8 +43,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
       phone: phone || undefined,
       age: parseInt(age, 10) || activeProfile.age,
       height: parseFloat(height) || activeProfile.height,
-      current_weight: parseFloat(currentWeight) || activeProfile.current_weight,
-      target_weight: parseFloat(targetWeight) || activeProfile.target_weight,
+      current_weight: activeProfile.current_weight,
+      target_weight: activeProfile.target_weight,
       gym_name: gymName || undefined,
       preferred_training_time: preferredTime,
       daily_water_target_ml: parseInt(dailyWater, 10) || activeProfile.daily_water_target_ml
@@ -253,25 +251,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-400 block mb-1">Peso Atual (kg)</label>
-                  <input
-                    type="number"
-                    value={currentWeight}
-                    onChange={(e) => setCurrentWeight(e.target.value)}
-                    className="w-full bg-dark-850 border border-slate-700 rounded-xl p-2.5 text-white"
-                  />
+                <div className="p-3 rounded-xl bg-dark-850 border border-slate-700">
+                  <span className="text-slate-400 block mb-1">Peso Atual (kg)</span>
+                  <span className="text-sm font-bold text-white flex items-center space-x-1">
+                    <Scale className="w-3.5 h-3.5 text-blue-400" />
+                    <span>{activeProfile.current_weight || 'Não registrado'}</span>
+                  </span>
                 </div>
-                <div>
-                  <label className="text-slate-400 block mb-1">Peso Objetivo (kg)</label>
-                  <input
-                    type="number"
-                    value={targetWeight}
-                    onChange={(e) => setTargetWeight(e.target.value)}
-                    className="w-full bg-dark-850 border border-slate-700 rounded-xl p-2.5 text-white"
-                  />
+                <div className="p-3 rounded-xl bg-dark-850 border border-slate-700">
+                  <span className="text-slate-400 block mb-1">Peso Objetivo (kg)</span>
+                  <span className="text-sm font-bold text-white flex items-center space-x-1">
+                    <Target className="w-3.5 h-3.5 text-blue-400" />
+                    <span>{activeProfile.target_weight || 'Não definido'}</span>
+                  </span>
                 </div>
               </div>
+              <p className="text-[11px] text-slate-500">
+                Para ajustar seu peso, use a aba <span className="text-emerald-400 font-semibold">Peso &amp; Evolução</span> no menu lateral.
+              </p>
 
               <div>
                 <label className="text-slate-400 block mb-1">Academia / Unidade</label>
