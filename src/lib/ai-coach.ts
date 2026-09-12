@@ -152,17 +152,17 @@ export function processAICoachPrompt(
   // ── Intent genérico de ajustar o treino ─────────────────────
   const wantsAdjust = /\bajustar\b|\bajuste\b|adaptar|adapta|modificar o treino|revisar treino/.test(lower);
   if (wantsAdjust) {
-    const list = todayExercises.length > 0
-      ? `${todayExercises.map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n')}`
-      : null;
+    const hasWorkout = todayExercises.length > 0;
     return {
       intent: 'workout_adjust',
-      message: `${greeting} Claro! Vamos **ajustar o seu treino de hoje** (**${todayWorkout?.title || 'Treino do dia'}**).\n\n${
-        list ? `**Sua ficha atual:**\n\n${list}\n\n` : '**Ainda não há treino salvo.** Posso te ajudar a criar um em **Criar Treino**.\n\n'
-      }Formas de ajustar:\n\n• **Remover um exercício** — me diga qual não te agradou;\n• **Cansaço ou dores** — aplico um **revisão** reduzindo as cargas;\n• **Dúvidas de progressão ou alimentação** — recebo orientações aqui mesmo.\n\nComo prefere ajustar?`,
+      message: `${greeting} ${
+        hasWorkout
+          ? `Para **ajustar o seu treino de hoje** (**${todayWorkout?.title || 'Treino do dia'}**)`
+          : '**Ainda não há treino salvo.** Posso te ajudar a criar um em **Criar Treino**.'
+      }, me diga como prefere:\n\n• **Remover um exercício** — me diga qual não te agradou;\n• **Cansaço ou dores** — aplico uma **revisão** reduzindo as cargas em 20%;\n• **Dúvidas de progressão ou alimentação** — recebo orientações aqui mesmo.\n\nToque em **"👀 Ver minha ficha atual"** abaixo para relembrar os exercícios. Como prefere ajustar?`,
       suggestedActions: [
-        { action: 'apply_review', label: '📋 Revisar treino (cargas -20%)', details: 'Reduz as cargas para aliviar cansaço ou dor.', workoutId: todayWorkout?.id },
         { action: 'list_exercises', label: '👀 Ver minha ficha atual', details: 'Listar os exercícios do treino de hoje.' },
+        { action: 'apply_review', label: '📋 Revisar treino (cargas -20%)', details: 'Reduz as cargas para aliviar cansaço ou dor.', workoutId: todayWorkout?.id },
         { action: 'view_nutrition', label: '🥗 Dúvidas de alimentação', details: 'Conferir metas e registro de refeições.' }
       ]
     };
