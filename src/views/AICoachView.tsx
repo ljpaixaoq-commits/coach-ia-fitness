@@ -401,9 +401,9 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
     return (
       <div className="space-y-5 max-w-2xl pb-16">
         <div className="flex items-center justify-between">
-          <button onClick={() => setMode('home')} className="flex items-center space-x-1 text-xs font-bold text-slate-400 hover:text-purple-400 transition-colors">
+          <button onClick={() => (historyTab ? setHistoryTab(null) : setMode('home'))} className="flex items-center space-x-1 text-xs font-bold text-slate-400 hover:text-purple-400 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar</span>
+            <span>{historyTab ? 'Tipo de pesquisa' : 'Voltar'}</span>
           </button>
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
             {historyTab ? flowMeta?.label : 'Histórico de Conversas'}
