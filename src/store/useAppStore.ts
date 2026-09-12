@@ -1002,10 +1002,17 @@ export function useAppStore() {
       case 'log_pain': return { navigateTo: 'health' };
 
       case 'list_exercises': {
-        const list = (targetWorkout?.exercises || []).map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n');
-        coachReply(list
-          ? `📋 **Treino de hoje — ${targetWorkout.title}:**\n\n${list}`
-          : 'Você ainda não possui um treino salvo para hoje.');
+        const withEx = userWorkouts.filter(w => w.exercises && w.exercises.length > 0);
+        if (withEx.length === 0) {
+          coachReply('Você ainda não possui um treino salvo com exercícios.');
+          return;
+        }
+        const blocks = withEx.map(w => {
+          const items = (w.exercises || []).map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n');
+          const tag = w.id === targetWorkout?.id ? ' — **hoje**' : '';
+          return `**${w.title || 'Treino'}${tag}:**\n${items}`;
+        });
+        coachReply(`📋 **Sua ficha completa (${withEx.length} ${withEx.length === 1 ? 'treino' : 'treinos'}):**\n\n${blocks.join('\n\n')}`);
         return;
       }
 
