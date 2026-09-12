@@ -234,9 +234,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <input
                     className={inputClass + " pl-10"}
                     type="tel"
+                    required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Telefone (opcional)"
+                    placeholder="Telefone"
                   />
                 </div>
 
