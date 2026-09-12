@@ -54,6 +54,8 @@ import {
   registerUserAdmin,
   updateUserProfileAdmin,
   updateUserPasswordAdmin,
+  uploadAvatar,
+  updateProfileAvatarUrl,
   UserWithProfile,
   RegisterInput
 } from '../lib/db';
@@ -135,7 +137,15 @@ export function useAppStore() {
     setAuthBusy(true);
     setAuthError(null);
     try {
-      await registerUser(input, password);
+      const profileId = await registerUser(input, password);
+      if (profileId && input.avatarFile) {
+        try {
+          const url = await uploadAvatar(input.avatarFile, profileId);
+          await updateProfileAvatarUrl(profileId, url);
+        } catch (uploadErr: any) {
+          console.error('Avatar upload falhou:', uploadErr);
+        }
+      }
     } catch (e: any) {
       setAuthError(e.message);
       throw e;
@@ -198,7 +208,15 @@ export function useAppStore() {
   const registerUserAsAdmin = async (input: RegisterInput, password: string) => {
     setAuthError(null);
     try {
-      await registerUserAdmin(input, password);
+      const profileId = await registerUserAdmin(input, password);
+      if (profileId && input.avatarFile) {
+        try {
+          const url = await uploadAvatar(input.avatarFile, profileId);
+          await updateProfileAvatarUrl(profileId, url);
+        } catch (uploadErr: any) {
+          console.error('Avatar upload falhou:', uploadErr);
+        }
+      }
       await loadAdminUsers();
     } catch (e: any) {
       setAuthError(e.message);

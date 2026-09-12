@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Flame, Loader2, Lock, User, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, CalendarDays, Phone } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Flame, Loader2, Lock, User, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, CalendarDays, Phone, ImagePlus } from 'lucide-react';
 import { formatCPF, formatPhone, onlyDigits } from '../lib/auth';
 
 interface AuthViewProps {
@@ -12,6 +12,7 @@ interface AuthViewProps {
     gender?: string;
     nickname?: string;
     avatarUrl?: string;
+    avatarFile?: File | null;
     phone?: string;
   }, password: string) => Promise<void>;
   onResetPassword: (cpf: string, birthDate: string, newPassword: string) => Promise<void>;
@@ -92,6 +93,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [birthDay, setBirthDay] = useState('');
@@ -131,10 +135,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
       if (!birthDate) return;
       setPending(true);
       try {
-        await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl, phone }, password);
+        await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl, avatarFile, phone }, password);
         setSuccess('Cadastro realizado! Sua conta será analisada pelo administrador e ativada em breve.');
         setMode('login');
-        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDay(''); setBirthMonth(''); setBirthYear(''); setPhone(''); setUsername('');
+        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); if (avatarPreview) URL.revokeObjectURL(avatarPreview); setAvatarFile(null); setAvatarPreview(''); setAvatarUrl(''); setEmail(''); setBirthDay(''); setBirthMonth(''); setBirthYear(''); setPhone(''); setUsername('');
       } catch (err) {
         // error already set in store
       } finally {
@@ -190,6 +194,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setConfirmPassword('');
     setName('');
     setNickname('');
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview('');
     setAvatarUrl('');
     setEmail('');
     setBirthDay('');
@@ -210,6 +217,23 @@ export const AuthView: React.FC<AuthViewProps> = ({
     if (!mm || mm > 12) { setFormError('Informe um mês válido (1 a 12).'); return ''; }
     if (!yyyy || yyyy < 1900 || yyyy > fullYear) { setFormError(`Informe um ano válido (1900 a ${fullYear}).`); return ''; }
     return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+  };
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarUrl('');
+  };
+
+  const removeAvatar = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setAvatarUrl('');
   };
 
   const inputClass = "w-full bg-dark-850 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
@@ -299,13 +323,36 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="Apelido (como quer ser chamado)"
                 />
-                <input
-                  className={inputClass}
-                  type="text"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="URL do avatar (opcional)"
-                />
+                <div>
+                  <label className="mb-1.5 flex items-center space-x-1.5 text-xs text-slate-500">
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    <span>Foto do avatar (opcional)</span>
+                  </label>
+                  {avatarPreview ? (
+                    <div className="flex items-center space-x-3">
+                      <img src={avatarPreview} alt="Prévia" className="w-14 h-14 rounded-xl object-cover border border-slate-700" />
+                      <div className="space-y-1.5 flex-1">
+                        <p className="text-xs text-emerald-400">Foto selecionada</p>
+                        <div className="flex space-x-2">
+                          <button type="button" onClick={() => avatarInputRef.current?.click()} className="px-3 py-1.5 rounded-xl bg-dark-850 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-dark-800 transition-colors">Trocar</button>
+                          <button type="button" onClick={removeAvatar} className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold hover:bg-rose-500/20 transition-colors">Remover</button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} className="w-full px-3 py-2 rounded-xl bg-dark-850 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-dark-800 transition-colors">
+                      Enviar do dispositivo
+                    </button>
+                  )}
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} aria-label="Enviar foto do dispositivo" />
+                  <input
+                    className={inputClass + " mt-2"}
+                    type="text"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    placeholder="Ou cole o link de uma imagem (URL)"
+                  />
+                </div>
                 <input
                   className={inputClass}
                   type="email"

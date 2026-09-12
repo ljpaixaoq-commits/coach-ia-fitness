@@ -674,6 +674,41 @@ export function syncProfile(p: Profile) {
   return upsert('perfis', toProfileColumns(p));
 }
 
+// ── Avatar Storage (Supabase Storage, bucket `avatars`) ────────
+export const AVATAR_BUCKET = 'avatars';
+
+export async function uploadAvatar(file: File, profileId: string): Promise<string> {
+  if (!isSupabaseConfigured()) return URL.createObjectURL(file);
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = `${profileId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+  if (error) throw new Error('Erro ao enviar foto: ' + error.message);
+  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export function avatarStoragePath(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const marker = `/storage/v1/object/public/${AVATAR_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  return idx === -1 ? null : url.slice(idx + marker.length).split('?')[0];
+}
+
+export async function deleteAvatar(url: string | null | undefined): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const path = avatarStoragePath(url);
+  if (!path) return;
+  await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+}
+
+export async function updateProfileAvatarUrl(profileId: string, url: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase.from('perfis').update({ url_avatar: url }).eq('id', profileId);
+  if (error) throw new Error('Erro ao salvar foto: ' + error.message);
+}
+
 // ── Workout Sync ───────────────────────────────────────────────
 export function syncWorkout(w: Workout) {
   return upsert('treinos', toWorkoutColumns(w));
@@ -802,10 +837,11 @@ export interface RegisterInput {
   role?: 'member' | 'admin';
   nickname?: string;
   avatarUrl?: string;
+  avatarFile?: File | null;
   phone?: string;
 }
 
-export async function registerUser(input: RegisterInput, password: string): Promise<void> {
+export async function registerUser(input: RegisterInput, password: string): Promise<string | null> {
   const cpf = onlyDigits(input.cpf);
   if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
   if (!input.name.trim()) throw new Error('Informe o nome.');
@@ -860,6 +896,8 @@ export async function registerUser(input: RegisterInput, password: string): Prom
   });
 
   if (error) throw new Error('Erro ao criar conta: ' + error.message);
+
+  return profile.id;
 }
 
 export async function resetPasswordByCpf(cpf: string, birthDate: string, newPassword: string): Promise<void> {
@@ -1000,7 +1038,7 @@ export async function validateResetIdentity(cpf: string, birthDate: string): Pro
 }
 
 // ── Admin: Create User ─────────────────────────────────────────
-export async function registerUserAdmin(input: RegisterInput, password: string): Promise<void> {
+export async function registerUserAdmin(input: RegisterInput, password: string): Promise<string | null> {
   const cpf = onlyDigits(input.cpf);
   if (!isValidCPF(cpf)) throw new Error('CPF inválido.');
   if (!input.name.trim()) throw new Error('Informe o nome.');
@@ -1055,6 +1093,8 @@ export async function registerUserAdmin(input: RegisterInput, password: string):
   });
 
   if (error) throw new Error('Erro ao criar conta: ' + error.message);
+
+  return profile.id;
 }
 
 // ── Admin: Update User Profile ─────────────────────────────────

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Profile } from '../types';
-import { User, Shield, Calendar, Building, Clock, Droplets, Phone, Mail, Pencil, X, Save, Scale, Target } from 'lucide-react';
+import { User, Shield, Calendar, Building, Clock, Droplets, Phone, Mail, Pencil, X, Save, Scale, Target, Camera, Trash2 } from 'lucide-react';
+import { uploadAvatar, deleteAvatar } from '../lib/db';
 
 interface ProfileViewProps {
   activeProfile: Profile;
@@ -15,10 +16,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
   const [phone, setPhone] = useState(activeProfile.phone || '');
   const [age, setAge] = useState(String(activeProfile.age || ''));
   const [height, setHeight] = useState(String(activeProfile.height || ''));
-
   const [gymName, setGymName] = useState(activeProfile.gym_name || '');
   const [preferredTime, setPreferredTime] = useState(activeProfile.preferred_training_time || '07:00');
   const [dailyWater, setDailyWater] = useState(String(activeProfile.daily_water_target_ml || 3000));
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setName(activeProfile.name);
@@ -31,6 +33,35 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
     setGymName(activeProfile.gym_name || '');
     setPreferredTime(activeProfile.preferred_training_time || '07:00');
     setDailyWater(String(activeProfile.daily_water_target_ml || 3000));
+  };
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !onUpdate) return;
+    setAvatarLoading(true);
+    try {
+      const url = await uploadAvatar(file, activeProfile.id);
+      await deleteAvatar(activeProfile.avatar_url);
+      await onUpdate({ ...activeProfile, avatar_url: url });
+    } catch (err: any) {
+      console.error('Erro ao atualizar foto:', err);
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!onUpdate) return;
+    setAvatarLoading(true);
+    try {
+      await deleteAvatar(activeProfile.avatar_url);
+      await onUpdate({ ...activeProfile, avatar_url: '' });
+    } catch (err: any) {
+      console.error('Erro ao remover foto:', err);
+    } finally {
+      setAvatarLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -88,7 +119,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 overflow-hidden shrink-0">
+          <div className="relative group w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 overflow-hidden shrink-0">
             {activeProfile.avatar_url ? (
               <img src={activeProfile.avatar_url} alt={activeProfile.name} className="w-full h-full object-cover" />
             ) : (
@@ -96,7 +127,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
                 {activeProfile.name.charAt(0)}
               </div>
             )}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+              {avatarLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <button onClick={() => avatarInputRef.current?.click()} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors" title="Trocar foto">
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                  {activeProfile.avatar_url && (
+                    <button onClick={handleRemoveAvatar} className="p-1.5 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 text-rose-200 transition-colors" title="Remover foto">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
+          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} aria-label="Trocar foto do perfil" />
           <div>
             <p className="text-lg font-bold text-white">{activeProfile.nickname || activeProfile.name}</p>
             <p className="text-xs text-slate-400 capitalize flex items-center space-x-1">
