@@ -1048,12 +1048,10 @@ export function useAppStore() {
           setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: next } : w));
           await deleteWorkoutExercise(exercise.id);
           await syncWorkoutExercise(substitute);
-          coachReply(`🗑️ **"${exercise.name}" foi removido** e o **"${substitute.name}" foi incluído em seu lugar** (mesmo grupo muscular: ${exercise.muscle_group}).\n\nSua ficha segue completa com ${next.length} exercícios. Qualquer outro ajuste, é só avisar.`);
-        } else {
-          const remaining = workout.exercises.filter(e => e.id !== exercise.id);
-          setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: remaining } : w));
-          await deleteWorkoutExercise(exercise.id);
-          coachReply(`🗑️ **"${exercise.name}" foi removido** do treino (sem substituto disponível para ${exercise.muscle_group}). Sua ficha agora tem ${remaining.length} ${remaining.length === 1 ? 'exercício' : 'exercícios'}.`);
+          coachReply(`🗑️ **"${exercise.name}" foi removido** e o **"${substitute.name}" foi incluído em seu lugar** (foco: ${substitute.muscle_group}).\n\nSua ficha segue completa com ${next.length} exercícios. Qualquer outro ajuste, é só avisar.`);
+} else {
+          coachReply(`ℹ️ Prefiro manter o **"${exercise.name}"** na sua ficha por enquanto: não há outro exercício disponível no meu banco para substituí-lo sem deixar seu treino com um exercício a menos (${exercise.muscle_group}). Se precisar mesmo removê-lo, posso incluir antes um exercício novo para você.`);
+          return;
         }
         return;
       }

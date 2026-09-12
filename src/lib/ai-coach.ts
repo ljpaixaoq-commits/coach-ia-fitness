@@ -104,7 +104,7 @@ export function processAICoachPrompt(
     if (found) {
       return {
         intent: 'remove_exercise',
-        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha e incluir **outro exercício no lugar**, para o mesmo grupo muscular (**${found.muscle_group}**), mantendo sua ficha completa. Clique no botão abaixo para eu aplicar.`,
+        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha e incluir **outro exercício equivalente no lugar** (se possível do mesmo grupo muscular **${found.muscle_group}**), mantendo sua ficha completa. Clique no botão abaixo para eu aplicar.`,
         suggestedActions: [
           { action: 'remove_exercise', label: `🗑️ Remover "${found.name}" do treino`, details: 'Remove o exercício e inclui um equivalente no lugar.', workoutId: todayWorkout!.id, exerciseId: found.id, exerciseName: found.name },
           { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
@@ -337,24 +337,60 @@ function mapTemplateToExercise(ex: ExerciseTemplate, setsMultiplier: number, ord
   };
 }
 
+const MUSCLE_FAMILIES: Record<string, string[]> = {
+  chest: ['Peito'],
+  back: ['Costas', 'Trapézio'],
+  shoulders: ['Ombros'],
+  legs: ['Pernas', 'Quadríceps', 'Posterior', 'Glúteos', 'Panturrilha'],
+  arms: ['Bíceps', 'Tríceps'],
+  core: ['Core'],
+  cardio: ['Cardio']
+};
+
+function pickSubstitutePool(pool: ExerciseTemplate[], excludeNames: string[]): ExerciseTemplate | null {
+  return pool.find(t => !excludeNames.some(n => n.toLowerCase() === t.name.toLowerCase())) || null;
+}
+
 export function suggestSubstituteExercise(
   muscleGroup: string,
   excludeNames: string[],
   workoutId: string
 ): WorkoutExercise | null {
   const target = muscleGroup.toLowerCase();
-  for (const group of Object.values(EXERCISE_DB)) {
-    for (const t of group) {
-      if (
-        t.muscle.toLowerCase() === target &&
-        !excludeNames.some(n => n.toLowerCase() === t.name.toLowerCase())
-      ) {
+
+  // Fase 1: mesmo músculo (ex.: Peito → outro exercício de Peito)
+  for (const pool of Object.values(EXERCISE_DB)) {
+    const t = pool.find(t => t.muscle.toLowerCase() === target && !excludeNames.some(n => n.toLowerCase() === t.name.toLowerCase()));
+    if (t) {
+      const ex = mapTemplateToExercise(t, 1, 0);
+      ex.workout_id = workoutId;
+      return ex;
+    }
+  }
+
+  // Fase 2: mesmo grupo muscular do treino (família)
+  for (const [family, muscles] of Object.entries(MUSCLE_FAMILIES)) {
+    if (muscles.some(m => m.toLowerCase() === target)) {
+      const t = pickSubstitutePool(EXERCISE_DB[family] || [], excludeNames);
+      if (t) {
         const ex = mapTemplateToExercise(t, 1, 0);
         ex.workout_id = workoutId;
         return ex;
       }
+      break;
     }
   }
+
+  // Fase 3: qualquer exercício do banco que ainda não esteja na ficha
+  for (const pool of Object.values(EXERCISE_DB)) {
+    const t = pickSubstitutePool(pool, excludeNames);
+    if (t) {
+      const ex = mapTemplateToExercise(t, 1, 0);
+      ex.workout_id = workoutId;
+      return ex;
+    }
+  }
+
   return null;
 }
 
