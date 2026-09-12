@@ -87,6 +87,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const [mode, setMode] = useState<CoachMode>('home');
   const [inputText, setInputText] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const [adjustBaseCount, setAdjustBaseCount] = useState<number | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // History flow
@@ -101,22 +102,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
 
   const isAdjustMode = mode === 'adjust';
   const chatMessages = isAdjustMode
-    ? (() => {
-        let startIdx = -1;
-        for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].sender === 'user' && messages[i].message.trim().toLowerCase().startsWith('quero ajustar meu treino')) {
-            startIdx = i;
-            break;
-          }
-        }
-        if (startIdx >= 0) return messages.slice(startIdx);
-        const userMsgs = messages.filter(m => m.sender === 'user');
-        const aiMsgs = messages.filter(m => m.sender === 'ai');
-        const pair = [];
-        if (userMsgs.length > 0) pair.push(userMsgs[userMsgs.length - 1]);
-        if (aiMsgs.length > 0) pair.push(aiMsgs[aiMsgs.length - 1]);
-        return pair.sort((a, b) => a.created_at.localeCompare(b.created_at));
-      })()
+    ? (adjustBaseCount !== null ? messages.slice(adjustBaseCount) : messages.slice(-2))
     : messages.slice(-30);
 
   const goHistory = () => {
@@ -234,6 +220,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   );
 
   const startAdjust = () => {
+    setAdjustBaseCount(messages.length);
     setMode('adjust');
     setPendingPrompt('Quero ajustar meu treino de hoje. Preciso de adaptações.');
   };
