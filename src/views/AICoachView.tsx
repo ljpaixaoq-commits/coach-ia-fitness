@@ -102,12 +102,12 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const isAdjustMode = mode === 'adjust';
   const chatMessages = isAdjustMode
     ? (() => {
-        const userMsgs = messages.filter(m => m.sender === 'user');
-        const aiMsgs = messages.filter(m => m.sender === 'ai');
-        const pair = [];
-        if (userMsgs.length > 0) pair.push(userMsgs[userMsgs.length - 1]);
-        if (aiMsgs.length > 0) pair.push(aiMsgs[aiMsgs.length - 1]);
-        return pair.sort((a, b) => a.created_at.localeCompare(b.created_at));
+        const lastIdx = [...messages].reverse().findIndex(m =>
+          m.sender === 'user' && m.message.includes('Quero ajustar meu treino de hoje')
+        );
+        if (lastIdx === -1) return messages.slice(-2);
+        const start = messages.length - 1 - lastIdx;
+        return messages.slice(start);
       })()
     : messages.slice(-30);
 
