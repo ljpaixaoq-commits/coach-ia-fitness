@@ -724,6 +724,11 @@ export function deleteWorkout(id: string) {
   return deleteWorkouts([id]);
 }
 
+export async function deleteWorkoutExercise(id: string) {
+  if (!isSupabaseConfigured()) return;
+  await remove('treino_exercicios', id);
+}
+
 export async function deleteWorkouts(ids: string[]) {
   if (!isSupabaseConfigured()) return;
   const { error } = await supabase

@@ -144,6 +144,7 @@ export function App() {
               todayWorkout={store.workouts[0]}
               injuries={store.injuries}
               onSendMessage={store.sendAICoachMessage}
+              onCoachAction={store.handleCoachAction}
               onGenerateWorkout={store.generateAndSaveWorkout}
               onNavigateTab={(tab) => store.setActiveTab(tab as NavTab)}
               hasWorkouts={store.workouts.length > 0}

@@ -248,17 +248,22 @@ export interface Goal {
   status: 'in_progress' | 'completed' | 'paused';
 }
 
+export interface SuggestedAction {
+  action: string;
+  label: string;
+  details?: string;
+  workoutId?: string;
+  exerciseId?: string;
+  exerciseName?: string;
+}
+
 export interface AICoachMessage {
   id: string;
   profile_id: string;
   sender: 'user' | 'ai';
   message: string;
-  intent_type?: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general';
-  suggested_actions?: {
-    action: string;
-    label: string;
-    details?: string;
-  }[];
+  intent_type?: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust';
+  suggested_actions?: SuggestedAction[];
   created_at: string;
 }
 

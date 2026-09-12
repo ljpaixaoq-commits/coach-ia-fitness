@@ -21,11 +21,14 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
 
 export interface AICoachResponse {
   message: string;
-  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general';
+  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust';
   suggestedActions?: {
     action: string;
     label: string;
     details?: string;
+    workoutId?: string;
+    exerciseId?: string;
+    exerciseName?: string;
   }[];
 }
 
@@ -92,14 +95,85 @@ export function processAICoachPrompt(
   const name = profile.nickname || profile.name;
   const { greeting } = getDynamicGreeting(name);
   const kneeLog = injuryLogs.find(i => i.body_part.toLowerCase().includes('joelho'));
+  const todayExercises = todayWorkout?.exercises || [];
+
+  // ── Ajuste: remover um exercício específico ─────────────────
+  const wantsRemove = /retirar|remover|excluir|abandonar|tirar (?:do treino|esse|este|desse|deste|o |um )|quero tirar|não gosto|nao gosto/.test(lower);
+  if (wantsRemove && todayExercises.length > 0) {
+    const found = todayExercises.find(e => e.name && lower.includes(e.name.toLowerCase()));
+    if (found) {
+      return {
+        intent: 'remove_exercise',
+        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha de hoje para uma adaptação mais confortável. As demais execuções permanecem intactas, sem prejuízo ao treino.\n\nClique no botão abaixo para eu aplicar a remoção.`,
+        suggestedActions: [
+          { action: 'remove_exercise', label: `🗑️ Remover "${found.name}" do treino`, details: 'Remove apenas este exercício e mantém os demais.', workoutId: todayWorkout!.id, exerciseId: found.id, exerciseName: found.name },
+          { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
+        ]
+      };
+    }
+    return {
+      intent: 'remove_exercise_not_found',
+      message: `${greeting} Verifiquei sua ficha de hoje (**${todayWorkout?.title || 'Treino do dia'}**) e **não encontrei** esse exercício. Estes são os exercícios atuais:\n\n${todayExercises.map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n')}\n\nMe diga **qual deles** você quer que eu remova.`,
+      suggestedActions: [
+        { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
+      ]
+    };
+  }
+
+  // ── Ajuste: muito cansado(a) ou muitas dores → revisar treino ──
+  const veryTired = /muito cansad|muitíssimo cansad|cansad(í|i)ssimo|exausto|exausta|sem forças|sem forcas|derrubad/.test(lower);
+  const lotsOfPain = /muitas dores|muita dor|muito dolorid|dores fortes|dor forte|dor intensa/.test(lower);
+  if (veryTired || lotsOfPain) {
+    const cause = veryTired ? 'de cansaço' : 'de dor';
+    return {
+      intent: veryTired ? 'review_fatigue' : 'review_pain',
+      message: `${greeting} Pelo que você relatou ${cause}, vou **realizar uma revisão no seu treino** para aliviar o impacto e proteger o seu corpo. A revisão vai:\n\n1. **Reduzir as cargas em ~20%** em todos os exercícios de hoje;\n2. **Aumentar o descanso entre as séries**;\n3. Recomendar priorizar a **técnica** sobre o peso.\n\nQuer que eu **aplique a revisão** agora?`,
+      suggestedActions: [
+        { action: 'apply_review', label: '📋 Aplicar revisão no treino (cargas -20%)', details: 'Reduz as cargas e aumenta o descanso do treino de hoje.', workoutId: todayWorkout?.id },
+        { action: 'increase_water', label: '💧 Registrar +500ml de Água', details: 'Hidratação ajuda no cansaço e na recuperação.' },
+        { action: 'log_pain', label: '📝 Registrar estado de hoje', details: 'Abrir a aba Saúde e registrar como você está.' }
+      ]
+    };
+  }
+
+  // ── Dúvidas de progressão de cargas ─────────────────────────
+  const wantsProgression = /progress|progredir|evoluir|carga\b|peso\b|subir carga|subir peso|levantar mais|quanto pesar/.test(lower);
+  if (wantsProgression) {
+    return {
+      intent: 'progression_advice',
+      message: `${greeting} Sobre **progressão de cargas**, aqui vai minha orientação:\n\n1. **Aumente aos poucos:** suba 2,5–5 kg (ou ~5%) apenas quando concluir todas as séries com técnica limpa;\n2. **Reserve 1–2 repetições (RIR):** não treine até a falha em todas as séries;\n3. **Anote os pesos:** registre na aba Treinos para acompanhar a evolução;\n4. **Alimentação:** para ter energia para progredir, mantenha a meta de **${profile.daily_protein_target_g}g de proteína** e **${profile.daily_calorie_target} kcal**.\n\nSe quiser, abro seu treino de hoje para conferir os pesos atuais.`,
+      suggestedActions: [
+        { action: 'start_workout', label: '🏋️ Abrir treino de hoje', details: 'Ver cargas atuais e ajustar.' },
+        { action: 'view_nutrition', label: '🥗 Ver metas de alimentação', details: 'Conferir calorias e proteínas do plano.' }
+      ]
+    };
+  }
+
+  // ── Intent genérico de ajustar o treino ─────────────────────
+  const wantsAdjust = /\bajustar\b|\bajuste\b|adaptar|adapta|modificar o treino|revisar treino/.test(lower);
+  if (wantsAdjust) {
+    const list = todayExercises.length > 0
+      ? `${todayExercises.map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n')}`
+      : null;
+    return {
+      intent: 'workout_adjust',
+      message: `${greeting} Claro! Vamos **ajustar o seu treino de hoje** (**${todayWorkout?.title || 'Treino do dia'}**).\n\n${
+        list ? `**Sua ficha atual:**\n\n${list}\n\n` : '**Ainda não há treino salvo.** Posso te ajudar a criar um em **Criar Treino**.\n\n'
+      }Formas de ajustar:\n\n• **Remover um exercício** — me diga qual não te agradou;\n• **Cansaço ou dores** — aplico um **revisão** reduzindo as cargas;\n• **Dúvidas de progressão ou alimentação** — recebo orientações aqui mesmo.\n\nComo prefere ajustar?`,
+      suggestedActions: [
+        { action: 'apply_review', label: '📋 Revisar treino (cargas -20%)', details: 'Reduz as cargas para aliviar cansaço ou dor.', workoutId: todayWorkout?.id },
+        { action: 'list_exercises', label: '👀 Ver minha ficha atual', details: 'Listar os exercícios do treino de hoje.' },
+        { action: 'view_nutrition', label: '🥗 Dúvidas de alimentação', details: 'Conferir metas e registro de refeições.' }
+      ]
+    };
+  }
 
   if (lower.includes('sem energia') || lower.includes('pouca energia') || lower.includes('cansado') || lower.includes('fadiga')) {
     return {
       intent: 'energy_low',
       message: `${greeting} Compreendo como você se sente. Treinar em dias de menor disposição faz parte do processo, mas adaptamos o treino estrategicamente:\n\n1. **Redução de Volume:** Reduza 1 série de cada exercício hoje e foque em 8-10 repetições com cadência controlada.\n2. **Descanso entre séries:** Aumente o descanso para 90-120 segundos no cronômetro.\n3. **Hidratação:** Beba 500ml de água gelada antes de começar.\n4. **Mistura Pré-Treino:** Tome sua dose personalizada 30 minutos antes para ativação neural.\n5. **Se a energia estiver abaixo de 4/10:** Faça apenas 20 min de esteira leve e mobilidade.`,
       suggestedActions: [
-        { action: 'reduce_load', label: '📉 Reduzir Cargas em 20%', details: 'Ajusta automaticamente as cargas sugeridas para hoje.' },
-        { action: 'swap_cardio', label: '🚶 Trocar por Cardio Leve & Mobilidade', details: 'Converte a sessão em recuperação ativa.' },
+        { action: 'apply_review', label: '📉 Reduzir Cargas em 20%', details: 'Revisa o treino de hoje para dias de fadiga.', workoutId: todayWorkout?.id },
         { action: 'increase_water', label: '💧 Registrar +500ml de Água', details: 'Hidratação rápida para recuperação.' }
       ]
     };
@@ -111,8 +185,7 @@ export function processAICoachPrompt(
       intent: 'injury_pain',
       message: `Atenção total ao seu joelho direito ${painText}!\n\nPara proteger os tendões e ligamentos:\n\n1. **Exercícios Proibidos Hoje:** Evite agachamento livre profundo e leg press com os pés baixos na plataforma.\n2. **Substituições Seguras:**\n   - Cadeira extensora isométrica (sustentar 45s a 60 graus);\n   - Mesa flexora para foco em posteriores;\n   - Elevação pélvica e panturrilha em pé.\n3. **Pós-Treino:** Aplique gelo por 20 minutos com compressa.\n4. **Aquecimento:** Faça 5 minutos de bicicleta ergométrica leve antes da musculação.`,
       suggestedActions: [
-        { action: 'swap_knee_safe', label: '🛡️ Aplicar Ficha Knee-Safe (Sem impacto)', details: 'Substitui exercícios de impacto por isometria.' },
-        { action: 'log_pain', label: '📝 Atualizar Nível de Dor no Registro', details: 'Registra a dor de hoje no histórico de saúde.' }
+        { action: 'log_pain', label: '📝 Atualizar Nível de Dor no Registro', details: 'Abrir a aba Saúde e registrar a dor de hoje.' }
       ]
     };
   }
@@ -122,8 +195,8 @@ export function processAICoachPrompt(
       intent: 'workout_too_heavy',
       message: `Se a sessão foi muito intensa, nosso foco é **Recuperação e Supercompensação Muscular**:\n\n1. **Nutrição:** Aumente a ingestão de carboidratos complexos (arroz, batata, aveia) na próxima refeição para repor glicogênio e garanta 35-40g de proteína.\n2. **Eletrólitos & Água:** Beba 750ml de água nas próximas duas horas.\n3. **Sono:** Durma pelo menos 7h30 a 8h esta noite para pico de síntese proteica.\n4. **Amanhã:** Programe descanso ou treino de grupo muscular não sinérgico.`,
       suggestedActions: [
-        { action: 'add_protein_snack', label: '🍗 Registrar Refeição Pós-Treino', details: 'Adicionar shake ou refeição de recuperação.' },
-        { action: 'set_rest_day', label: '🛌 Marcar Amanhã como Descanso', details: 'Ajusta o cronograma semanal.' }
+        { action: 'add_protein_snack', label: '🍗 Registrar Refeição Pós-Treino', details: 'Abrir a aba Alimentação para registrar a refeição.' },
+        { action: 'apply_review', label: '📋 Reduzir cargas para a próxima sessão', details: 'Deixa o próximo treino mais leve para recuperação.', workoutId: todayWorkout?.id }
       ]
     };
   }
@@ -133,8 +206,7 @@ export function processAICoachPrompt(
       intent: 'low_sleep',
       message: `Noites com pouco sono afetam a coordenação neural e elevam o cortisol. Recomendações para hoje:\n\n1. **Sem Recordes de Carga (PRs):** Treine com 70% a 75% da sua carga normal, deixando 2 repetições em reserva (RIR 2).\n2. **Técnica:** Mantenha postura impecável em todos os movimentos.\n3. **Cafeína Consciente:** Tome a mistura pré-treino somente até às 16h para não prejudicar o sono de hoje.\n4. **Hidratação:** Redobre a ingestão de líquidos durante todo o dia.`,
       suggestedActions: [
-        { action: 'safety_mode', label: '⚙️ Ativar Modo Treino Seguro', details: 'Prioriza cadência e evita falha excêntrica.' },
-        { action: 'log_sleep', label: '🌙 Registrar Horas de Sono', details: 'Atualiza o registro de saúde.' }
+        { action: 'apply_review', label: '⚙️ Ativar Modo Treino Seguro', details: 'Reduz as cargas em 20% para treinar com mais cuidado.', workoutId: todayWorkout?.id }
       ]
     };
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Profile, AICoachMessage, Workout, InjuryPainLog } from '../types';
+import { Profile, AICoachMessage, SuggestedAction, Workout, InjuryPainLog } from '../types';
 import { WorkoutGoal } from '../lib/ai-coach';
 import {
   Bot,
@@ -22,6 +22,7 @@ interface AICoachViewProps {
   todayWorkout?: Workout;
   injuries: InjuryPainLog[];
   onSendMessage: (message: string) => void;
+  onCoachAction: (action?: SuggestedAction | null) => Promise<{ navigateTo?: string } | undefined> | undefined;
   onGenerateWorkout: (goal: WorkoutGoal, count: number) => Promise<Workout[]>;
   onNavigateTab: (tab: string) => void;
   hasWorkouts: boolean;
@@ -61,6 +62,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   todayWorkout,
   injuries,
   onSendMessage,
+  onCoachAction,
   onGenerateWorkout,
   onNavigateTab,
   hasWorkouts,
@@ -94,6 +96,15 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
       setPendingPrompt(null);
     }
   }, [pendingPrompt]);
+
+  const handleSuggestedAction = async (sa: SuggestedAction) => {
+    try {
+      const res = await onCoachAction(sa);
+      if (res?.navigateTo) onNavigateTab(res.navigateTo);
+    } catch (e) {
+      console.error('Erro ao executar ação do Coach:', e);
+    }
+  };
 
   const goCreate = () => {
     if (hasWorkouts) {
@@ -751,6 +762,19 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
                 isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-dark-850 border border-slate-800 text-slate-200 rounded-tl-none shadow-sm'
               }`}>
                 <div className="whitespace-pre-line">{msg.message}</div>
+                {msg.suggested_actions && msg.suggested_actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {msg.suggested_actions.map((sa, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSuggestedAction(sa)}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isUser ? 'bg-blue-500/20 border-blue-300/30 text-blue-50 hover:bg-blue-500/30' : 'bg-blue-500/10 border-blue-500/30 text-blue-300 hover:bg-blue-500/20'}`}
+                      >
+                        {sa.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="text-[10px] opacity-60 text-right">
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>

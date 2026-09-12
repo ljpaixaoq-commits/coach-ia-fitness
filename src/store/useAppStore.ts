@@ -13,7 +13,8 @@ import {
   EvolutionPhoto,
   Goal,
   AICoachMessage,
-  AIDailySummary
+  AIDailySummary,
+  SuggestedAction
 } from '../types';
 import {
   INITIAL_PROFILES,
@@ -43,6 +44,7 @@ import {
   syncWorkoutExercise,
   syncWorkoutLog,
   deleteWorkouts,
+  deleteWorkoutExercise,
   loginUser,
   registerUser,
   resetPasswordByCpf,
@@ -971,6 +973,100 @@ export function useAppStore() {
     }, 600);
   };
 
+  // AI Suggested Actions (botões do Coach)
+  const coachReply = (message: string, suggestedActions?: SuggestedAction[]) => {
+    const aiMsg: AICoachMessage = {
+      id: `msg-ai-${Date.now()}`,
+      profile_id: activeProfile.id,
+      sender: 'ai',
+      message,
+      intent_type: 'general',
+      suggested_actions: suggestedActions,
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, aiMsg]);
+    syncMessage(aiMsg);
+  };
+
+  const handleCoachAction = async (action?: SuggestedAction | null): Promise<{ navigateTo?: string } | undefined> => {
+    if (!action) return;
+    const type = action.action;
+    const targetWorkout = userWorkouts.find(w => w.id === action.workoutId) || userWorkouts[0];
+
+    switch (type) {
+      case 'start_workout': return { navigateTo: 'workouts' };
+      case 'view_summary': return { navigateTo: 'dashboard' };
+      case 'view_nutrition':
+      case 'add_protein_snack': return { navigateTo: 'nutrition' };
+      case 'set_rest_day': return { navigateTo: 'workouts' };
+      case 'log_pain': return { navigateTo: 'health' };
+
+      case 'list_exercises': {
+        const list = (targetWorkout?.exercises || []).map((e, i) => `${i + 1}. ${e.name} (${e.sets}x ${e.reps_target})`).join('\n');
+        coachReply(list
+          ? `📋 **Treino de hoje — ${targetWorkout.title}:**\n\n${list}`
+          : 'Você ainda não possui um treino salvo para hoje.');
+        return;
+      }
+
+      case 'take_blend': {
+        const blend = supplements.find(s => s.is_custom_blend || s.name.toLowerCase().includes('mistura'));
+        if (blend) {
+          takeSupplementDose(blend.id);
+          coachReply(`✅ Dose da **${blend.name}** registrada! Restam ${Math.max(0, blend.current_stock_doses - 1)} doses em estoque.`);
+        } else {
+          coachReply('⚠️ Nenhuma mistura personalizada encontrada no estoque. Você pode cadastrar uma na aba **Suplementos**.');
+        }
+        return;
+      }
+
+      case 'increase_water': {
+        addWater(500);
+        coachReply('💧 **+500ml de água registrados!** Continue se hidratando.');
+        return;
+      }
+
+      case 'remove_exercise': {
+        const workout = targetWorkout;
+        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+          coachReply('⚠️ Não encontrei um treino salvo para fazer o ajuste.');
+          return;
+        }
+        const exercise = workout.exercises.find(e => e.id === action.exerciseId);
+        if (!exercise) {
+          coachReply(`⚠️ O exercício "${action.exerciseName || ''}" não está na sua ficha atual.`);
+          return;
+        }
+        const remaining = workout.exercises.filter(e => e.id !== exercise.id);
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: remaining } : w));
+        await deleteWorkoutExercise(exercise.id);
+        coachReply(`🗑️ **"${exercise.name}" removido do treino de hoje!** Sua ficha agora tem ${remaining.length} ${remaining.length === 1 ? 'exercício' : 'exercícios'}.\n\nQualquer outro ajuste, é só avisar.`);
+        return;
+      }
+
+      case 'apply_review': {
+        const workout = targetWorkout;
+        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+          coachReply('⚠️ Não encontrei exercícios para revisar.');
+          return;
+        }
+        const updated = workout.exercises.map(e => ({
+          ...e,
+          default_weight_kg: Math.max(0, Math.round((e.default_weight_kg || 0) * 0.8)),
+          rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.3)),
+          sets_data: (e.sets_data || []).map(s => ({ ...s, weight_kg: Math.max(0, Math.round((s.weight_kg || 0) * 0.8)) }))
+        }));
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: updated } : w));
+        await Promise.all(updated.map(e => syncWorkoutExercise(e)));
+        coachReply(`📋 **Revisão aplicada no seu treino!**\n\n- Cargas reduzidas em **20%**\n- Descanso entre séries aumentado\n\nTreine com calma, priorizando a técnica. Qualquer desconforto, me avise.`);
+        return;
+      }
+
+      default:
+        return;
+    }
+  };
+
   // AI Workout Generation
   const generateAndSaveWorkout = async (goal: WorkoutGoal, count: number = 1): Promise<Workout[]> => {
     const results: Workout[] = [];
@@ -1091,6 +1187,7 @@ export function useAppStore() {
     addGoal,
     messages: userMessages,
     sendAICoachMessage,
+    handleCoachAction,
     generateAndSaveWorkout,
     clearWorkouts,
     smartDailySummary
