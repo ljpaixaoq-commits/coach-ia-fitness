@@ -39,9 +39,10 @@ interface AICoachViewProps {
 type CoachMode = 'home' | 'create' | 'adjust' | 'improve' | 'chat' | 'history';
 
 const HISTORY_TABS: { flow: CoachFlow; label: string; desc: string; icon: any; color: string }[] = [
-  { flow: 'ajuste', label: 'Ajuste de treino', desc: 'Remoções, revisões e adaptações de treino', icon: ClipboardList, color: 'from-amber-500/20 to-orange-600/20 text-amber-300 border-amber-500/30' },
   { flow: 'criacao', label: 'Criação de treino', desc: 'Treinos e variações gerados pelo Coach', icon: Rocket, color: 'from-blue-500/20 to-indigo-600/20 text-blue-300 border-blue-500/30' },
-  { flow: 'melhoria', label: 'Melhorias de treino', desc: 'Orientações de evolução e progressão', icon: Wand2, color: 'from-emerald-500/20 to-teal-600/20 text-emerald-300 border-emerald-500/30' }
+  { flow: 'ajuste', label: 'Ajuste de treino', desc: 'Remoções, revisões e adaptações de treino', icon: ClipboardList, color: 'from-amber-500/20 to-orange-600/20 text-amber-300 border-amber-500/30' },
+  { flow: 'melhoria', label: 'Melhorias de treino', desc: 'Orientações de evolução e progressão', icon: Wand2, color: 'from-emerald-500/20 to-teal-600/20 text-emerald-300 border-emerald-500/30' },
+  { flow: 'conversa', label: 'Perguntar ao Coach IA', desc: 'Conversas e orientações gerais com o Coach', icon: Bot, color: 'from-purple-500/20 to-fuchsia-600/20 text-purple-300 border-purple-500/30' }
 ];
 type CreateStep = 'objective' | 'limitations' | 'details' | 'variations' | 'confirm';
 
@@ -336,20 +337,6 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
               Melhorar desempenho <ChevronRight className="w-3.5 h-3.5 ml-1" />
             </div>
           </button>
-
-          <button
-            onClick={goHistory}
-            className="p-5 rounded-2xl bg-dark-900 border border-purple-500/30 hover:border-purple-500/60 transition-all text-left group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-              <HistoryIcon className="w-5 h-5 text-purple-400" />
-            </div>
-            <h3 className="text-sm font-bold text-white mb-1">Histórico de Conversas</h3>
-            <p className="text-xs text-slate-400">Consultar ajustes, criações e melhorias antigas por período.</p>
-            <div className="mt-3 flex items-center text-purple-400 text-xs font-bold">
-              Consultar <ChevronRight className="w-3.5 h-3.5 ml-1" />
-            </div>
-          </button>
         </div>
 
         {/* Open Chat */}
@@ -387,6 +374,23 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
             <ChevronRight className="w-5 h-5 text-blue-400" />
           </button>
         )}
+
+        {/* Histórico de Conversas */}
+        <button
+          onClick={goHistory}
+          className="w-full p-4 rounded-2xl bg-dark-900 border border-purple-500/30 hover:border-purple-500/60 transition-all flex items-center justify-between"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+              <HistoryIcon className="w-4 h-4 text-purple-400" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-white">Histórico de Conversas</p>
+              <p className="text-xs text-slate-400">Consultar ajustes, criações e melhorias antigas por período</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-purple-400" />
+        </button>
         {replaceModal}
       </div>
     );
