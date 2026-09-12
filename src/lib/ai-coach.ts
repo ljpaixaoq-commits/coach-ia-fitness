@@ -104,9 +104,9 @@ export function processAICoachPrompt(
     if (found) {
       return {
         intent: 'remove_exercise',
-        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha de hoje para uma adaptação mais confortável. As demais execuções permanecem intactas, sem prejuízo ao treino.\n\nClique no botão abaixo para eu aplicar a remoção.`,
+        message: `${greeting} Entendi! Vou **remover o "${found.name}"** da sua ficha e incluir **outro exercício no lugar**, para o mesmo grupo muscular (**${found.muscle_group}**), mantendo sua ficha completa. Clique no botão abaixo para eu aplicar.`,
         suggestedActions: [
-          { action: 'remove_exercise', label: `🗑️ Remover "${found.name}" do treino`, details: 'Remove apenas este exercício e mantém os demais.', workoutId: todayWorkout!.id, exerciseId: found.id, exerciseName: found.name },
+          { action: 'remove_exercise', label: `🗑️ Remover "${found.name}" do treino`, details: 'Remove o exercício e inclui um equivalente no lugar.', workoutId: todayWorkout!.id, exerciseId: found.id, exerciseName: found.name },
           { action: 'list_exercises', label: '👀 Ver exercícios do treino de hoje', details: 'Relembrar os exercícios da ficha atual.' }
         ]
       };
@@ -335,6 +335,27 @@ function mapTemplateToExercise(ex: ExerciseTemplate, setsMultiplier: number, ord
       completed: false
     }))
   };
+}
+
+export function suggestSubstituteExercise(
+  muscleGroup: string,
+  excludeNames: string[],
+  workoutId: string
+): WorkoutExercise | null {
+  const target = muscleGroup.toLowerCase();
+  for (const group of Object.values(EXERCISE_DB)) {
+    for (const t of group) {
+      if (
+        t.muscle.toLowerCase() === target &&
+        !excludeNames.some(n => n.toLowerCase() === t.name.toLowerCase())
+      ) {
+        const ex = mapTemplateToExercise(t, 1, 0);
+        ex.workout_id = workoutId;
+        return ex;
+      }
+    }
+  }
+  return null;
 }
 
 export function enrichExerciseFromTemplate(ex: WorkoutExercise): WorkoutExercise {

@@ -26,7 +26,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate, suggestSubstituteExercise } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -1037,10 +1037,24 @@ export function useAppStore() {
           coachReply(`⚠️ O exercício "${action.exerciseName || ''}" não está na sua ficha atual.`);
           return;
         }
-        const remaining = workout.exercises.filter(e => e.id !== exercise.id);
-        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: remaining } : w));
-        await deleteWorkoutExercise(exercise.id);
-        coachReply(`🗑️ **"${exercise.name}" removido do treino de hoje!** Sua ficha agora tem ${remaining.length} ${remaining.length === 1 ? 'exercício' : 'exercícios'}.\n\nQualquer outro ajuste, é só avisar.`);
+        const currentNames = workout.exercises.map(e => e.name);
+        const substitute = suggestSubstituteExercise(exercise.muscle_group, currentNames, workout.id);
+        if (substitute) {
+          substitute.id = `ex-ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          substitute.order_index = exercise.order_index;
+          substitute.default_weight_kg = exercise.default_weight_kg || substitute.default_weight_kg;
+          substitute.sets_data = (substitute.sets_data || []).map(s => ({ ...s, weight_kg: substitute.default_weight_kg || 0 }));
+          const next = workout.exercises.map(e => e.id === exercise.id ? substitute : e);
+          setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: next } : w));
+          await deleteWorkoutExercise(exercise.id);
+          await syncWorkoutExercise(substitute);
+          coachReply(`🗑️ **"${exercise.name}" foi removido** e o **"${substitute.name}" foi incluído em seu lugar** (mesmo grupo muscular: ${exercise.muscle_group}).\n\nSua ficha segue completa com ${next.length} exercícios. Qualquer outro ajuste, é só avisar.`);
+        } else {
+          const remaining = workout.exercises.filter(e => e.id !== exercise.id);
+          setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: remaining } : w));
+          await deleteWorkoutExercise(exercise.id);
+          coachReply(`🗑️ **"${exercise.name}" foi removido** do treino (sem substituto disponível para ${exercise.muscle_group}). Sua ficha agora tem ${remaining.length} ${remaining.length === 1 ? 'exercício' : 'exercícios'}.`);
+        }
         return;
       }
 
