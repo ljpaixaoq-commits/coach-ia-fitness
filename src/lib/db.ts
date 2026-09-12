@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { hashPassword, verifyPassword, onlyDigits, isValidCPF } from './auth';
+import { compressImageFile } from './image';
 import {
   Profile,
   Workout,
@@ -679,11 +680,12 @@ export const AVATAR_BUCKET = 'avatars';
 
 export async function uploadAvatar(file: File, profileId: string): Promise<string> {
   if (!isSupabaseConfigured()) return URL.createObjectURL(file);
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const optimized = await compressImageFile(file);
+  const ext = (optimized.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
   const path = `${profileId}/${Date.now()}.${ext}`;
   const { error } = await supabase.storage
     .from(AVATAR_BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+    .upload(path, optimized, { upsert: true, contentType: optimized.type || 'image/jpeg' });
   if (error) throw new Error('Erro ao enviar foto: ' + error.message);
   const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
   return data.publicUrl;
