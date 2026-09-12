@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { UserWithProfile } from '../lib/db';
+import { UserWithProfile, uploadAvatar, deleteAvatar } from '../lib/db';
 import {
   ShieldCheck,
   UserPlus,
@@ -75,6 +75,10 @@ const EditUserModal: React.FC<{
   const [name, setName] = useState(user.profile?.name || '');
   const [nickname, setNickname] = useState(user.profile?.nickname || '');
   const [avatarUrl, setAvatarUrl] = useState(user.profile?.avatar_url || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [removeAvatarFlag, setRemoveAvatarFlag] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [cpf, setCpf] = useState(user.profile?.cpf || '');
   const [birthDay, setBirthDay] = useState(user.profile?.birth_date?.split('-')[2] || '');
   const [birthMonth, setBirthMonth] = useState(user.profile?.birth_date?.split('-')[1] || '');
@@ -85,6 +89,24 @@ const EditUserModal: React.FC<{
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setRemoveAvatarFlag(false);
+  };
+
+  const removeCurrentAvatar = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setRemoveAvatarFlag(true);
+    setAvatarUrl('');
+  };
 
   const fmtCPF = (v: string) => {
     const d = v.replace(/\D/g, '').slice(0, 11);
@@ -106,7 +128,21 @@ const EditUserModal: React.FC<{
     }
     setSaving(true);
     try {
-      await onSave({ name: name.trim(), nickname: nickname.trim(), avatar_url: avatarUrl || undefined, cpf: digits, birth_date: birthDate, email: email || undefined });
+      let finalAvatarUrl: string | undefined;
+      let oldAvatarToDelete: string | null = null;
+
+      if (avatarFile) {
+        finalAvatarUrl = await uploadAvatar(avatarFile, user.profile!.id);
+        oldAvatarToDelete = user.profile?.avatar_url ?? null;
+      } else if (removeAvatarFlag) {
+        finalAvatarUrl = '';
+        oldAvatarToDelete = user.profile?.avatar_url ?? null;
+      } else {
+        finalAvatarUrl = avatarUrl || undefined;
+      }
+
+      await onSave({ name: name.trim(), nickname: nickname.trim(), avatar_url: finalAvatarUrl, cpf: digits, birth_date: birthDate, email: email || undefined });
+      await deleteAvatar(oldAvatarToDelete);
       setSuccess('Dados atualizados com sucesso!');
       setTimeout(() => onClose(), 1000);
     } catch (e: any) { setError(e.message); } finally { setSaving(false); }
@@ -140,7 +176,24 @@ const EditUserModal: React.FC<{
         <div className="space-y-3">
           <input className={inputClass} type="text" placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
           <input className={inputClass} type="text" placeholder="Apelido" value={nickname} onChange={(e) => setNickname(e.target.value)} />
-          <input className={inputClass} type="text" placeholder="URL do avatar (opcional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+          <div>
+            <div className="mb-1 text-xs text-slate-400">Foto do avatar (opcional)</div>
+            <div className="flex items-center space-x-2">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Prévia" className="h-10 w-10 rounded-lg object-cover border border-slate-700 shrink-0" />
+              ) : user.profile?.avatar_url && !removeAvatarFlag ? (
+                <img src={user.profile.avatar_url} alt={user.profile.name || ''} className="h-10 w-10 rounded-lg object-cover border border-slate-700 shrink-0" />
+              ) : null}
+              <button type="button" onClick={() => avatarInputRef.current?.click()} className="flex-1 py-2 rounded-xl bg-dark-850 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-dark-800 transition-colors flex items-center justify-center space-x-1">
+                <ImagePlus className="w-3.5 h-3.5" /><span>{avatarPreview ? 'Trocar foto' : 'Enviar do dispositivo'}</span>
+              </button>
+              {(user.profile?.avatar_url || avatarPreview) && (
+                <button type="button" onClick={removeCurrentAvatar} className="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold hover:bg-rose-500/20 transition-colors shrink-0">✕</button>
+              )}
+            </div>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} aria-label="Enviar foto do avatar" />
+            <input className={inputClass + " mt-2"} type="text" placeholder="Ou cole o link de uma imagem (URL)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+          </div>
           <input className={inputClass} type="text" placeholder="CPF" value={cpf} onChange={(e) => setCpf(fmtCPF(e.target.value))} />
           <BirthDateFields day={birthDay} month={birthMonth} year={birthYear} onDayChange={setBirthDay} onMonthChange={setBirthMonth} onYearChange={setBirthYear} />
           <input className={inputClass} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />

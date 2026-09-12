@@ -119,7 +119,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="relative group w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 overflow-hidden shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 overflow-hidden shrink-0">
             {activeProfile.avatar_url ? (
               <img src={activeProfile.avatar_url} alt={activeProfile.name} className="w-full h-full object-cover" />
             ) : (
@@ -127,24 +127,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
                 {activeProfile.name.charAt(0)}
               </div>
             )}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
-              {avatarLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <button onClick={() => avatarInputRef.current?.click()} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors" title="Trocar foto">
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
-                  {activeProfile.avatar_url && (
-                    <button onClick={handleRemoveAvatar} className="p-1.5 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 text-rose-200 transition-colors" title="Remover foto">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
           </div>
-          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} aria-label="Trocar foto do perfil" />
           <div>
             <p className="text-lg font-bold text-white">{activeProfile.nickname || activeProfile.name}</p>
             <p className="text-xs text-slate-400 capitalize flex items-center space-x-1">
@@ -164,6 +147,35 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ activeProfile, onUpdat
               </p>
             )}
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          {avatarLoading ? (
+            <span className="flex items-center space-x-2 text-xs text-slate-400">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <span>Enviando foto...</span>
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center space-x-1.5 transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>{activeProfile.avatar_url ? 'Trocar foto' : 'Escolher foto'}</span>
+              </button>
+              {activeProfile.avatar_url && (
+                <button
+                  onClick={handleRemoveAvatar}
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center space-x-1.5 hover:bg-rose-500/20 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remover foto</span>
+                </button>
+              )}
+            </>
+          )}
+          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} aria-label="Trocar foto do perfil" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
