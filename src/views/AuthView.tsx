@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Loader2, Lock, User, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, CalendarDays } from 'lucide-react';
+import { Flame, Loader2, Lock, User, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, CalendarDays, Phone } from 'lucide-react';
 import { formatCPF } from '../lib/auth';
 
 interface AuthViewProps {
@@ -12,6 +12,7 @@ interface AuthViewProps {
     gender?: string;
     nickname?: string;
     avatarUrl?: string;
+    phone?: string;
   }, password: string) => Promise<void>;
   onResetPassword: (cpf: string, birthDate: string, newPassword: string) => Promise<void>;
   onValidateReset?: (cpf: string, birthDate: string) => Promise<{ account_id: string; profile_name: string }>;
@@ -39,6 +40,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [avatarUrl, setAvatarUrl] = useState('');
   const [email, setEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [phone, setPhone] = useState('');
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -70,10 +72,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
       }
       setPending(true);
       try {
-        await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl }, password);
+        await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl, phone }, password);
         setSuccess('Cadastro realizado! Sua conta será analisada pelo administrador e ativada em breve.');
         setMode('login');
-        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDate(''); setUsername('');
+        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDate(''); setPhone(''); setUsername('');
       } catch (err) {
         // error already set in store
       } finally {
@@ -227,6 +229,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="E-mail (opcional)"
                 />
+                <div className="relative">
+                  <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+                  <input
+                    className={inputClass + " pl-10"}
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Telefone (opcional)"
+                  />
+                </div>
 
                 {/* Register: Birth date - required by the API for new users */}
                 <div className="relative">
@@ -237,8 +249,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     required
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
-                    placeholder="Data de nascimento"
+                    style={{ color: birthDate ? undefined : 'transparent' }}
+                    aria-label="Data de nascimento"
                   />
+                  {!birthDate && (
+                    <span className="absolute left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none select-none">
+                      dd/mm/aaaa
+                    </span>
+                  )}
                 </div>
               </>
             )}

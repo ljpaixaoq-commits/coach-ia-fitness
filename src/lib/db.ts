@@ -799,9 +799,10 @@ export interface RegisterInput {
   cpf: string;
   birthDate: string;
   gender?: string;
-  role?: 'admin' | 'member';
+  role?: 'member' | 'admin';
   nickname?: string;
   avatarUrl?: string;
+  phone?: string;
 }
 
 export async function registerUser(input: RegisterInput, password: string): Promise<void> {
@@ -828,6 +829,7 @@ export async function registerUser(input: RegisterInput, password: string): Prom
       apelido: input.nickname!.trim(),
       email: input.email || null,
       url_avatar: input.avatarUrl || null,
+      telefone: input.phone || null,
       cpf,
       data_nascimento: input.birthDate,
       papel: input.role || 'member',
@@ -1022,6 +1024,7 @@ export async function registerUserAdmin(input: RegisterInput, password: string):
       apelido: input.nickname!.trim(),
       email: input.email || null,
       url_avatar: input.avatarUrl || null,
+      telefone: input.phone || null,
       cpf,
       data_nascimento: input.birthDate,
       papel: 'member',
