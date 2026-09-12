@@ -54,40 +54,40 @@ async function runAutoMigration() {
       -- View de Resumo Diário do Usuário
       CREATE OR REPLACE VIEW v_daily_dashboard_summary AS
       SELECT 
-        p.id AS profile_id,
-        p.name,
-        p.current_weight,
-        p.target_weight,
-        ROUND((p.current_weight - p.target_weight)::numeric, 1) AS kg_remaining,
-        COALESCE(w.today_water_ml, 0) AS water_intake_ml,
-        p.daily_water_target_ml,
-        COALESCE(m.today_calories, 0) AS calories_consumed,
-        p.daily_calorie_target
-      FROM profiles p
+        p.id AS perfil_id,
+        p.nome,
+        p.peso_atual,
+        p.peso_objetivo,
+        ROUND((p.peso_atual - p.peso_objetivo)::numeric, 1) AS kg_restantes,
+        COALESCE(w.agua_hoje_ml, 0) AS consumo_agua_ml,
+        p.meta_agua_diaria_ml,
+        COALESCE(m.calorias_hoje, 0) AS calorias_consumidas,
+        p.meta_calorias_diaria
+      FROM perfis p
       LEFT JOIN (
-        SELECT profile_id, SUM(amount_ml) AS today_water_ml
-        FROM water_logs
-        WHERE logged_at >= CURRENT_DATE
-        GROUP BY profile_id
-      ) w ON w.profile_id = p.id
+        SELECT perfil_id, SUM(quantidade_ml) AS agua_hoje_ml
+        FROM registro_agua
+        WHERE registrado_em >= CURRENT_DATE
+        GROUP BY perfil_id
+      ) w ON w.perfil_id = p.id
       LEFT JOIN (
-        SELECT profile_id, SUM(total_calories) AS today_calories
-        FROM meals
-        WHERE consumed_at >= CURRENT_DATE
-        GROUP BY profile_id
-      ) m ON m.profile_id = p.id;
+        SELECT perfil_id, SUM(total_calorias) AS calorias_hoje
+        FROM refeicoes
+        WHERE consumida_em >= CURRENT_DATE
+        GROUP BY perfil_id
+      ) m ON m.perfil_id = p.id;
 
       -- View de Frequência e Performance de Treinos
       CREATE OR REPLACE VIEW v_workout_performance AS
       SELECT 
-        p.id AS profile_id,
-        p.name,
-        COUNT(wl.id) AS total_workouts_completed,
-        ROUND(AVG(wl.duration_seconds / 60)::numeric, 0) AS avg_duration_minutes,
-        ROUND(AVG(wl.rpe_effort)::numeric, 1) AS avg_rpe_effort
-      FROM profiles p
-      LEFT JOIN workout_logs wl ON wl.profile_id = p.id
-      GROUP BY p.id, p.name;
+        p.id AS perfil_id,
+        p.nome,
+        COUNT(wl.id) AS total_treinos_concluidos,
+        ROUND(AVG(wl.duracao_segundos / 60)::numeric, 0) AS duracao_media_minutos,
+        ROUND(AVG(wl.esforco_rpe)::numeric, 1) AS rpe_medio
+      FROM perfis p
+      LEFT JOIN registro_treinos wl ON wl.perfil_id = p.id
+      GROUP BY p.id, p.nome;
     `;
     await client.query(viewsSql);
     console.log('✅ Views analíticas (v_daily_dashboard_summary, v_workout_performance) criadas!');

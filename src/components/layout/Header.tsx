@@ -6,8 +6,6 @@ import { ThemeToggle } from '../common/ThemeToggle';
 
 interface HeaderProps {
   activeProfile: Profile;
-  profiles: Profile[];
-  onSwitchProfile: (id: string) => void;
   activeTab: NavTab;
   onOpenSmartSummary: () => void;
   theme: 'dark' | 'light';
@@ -19,8 +17,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   activeProfile,
-  profiles,
-  onSwitchProfile,
   activeTab,
   onOpenSmartSummary,
   theme,
@@ -56,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
             {activeTab === 'photos' && 'Linha do Tempo Visual'}
             {activeTab === 'goals' && 'Metas & Hábitos'}
             {activeTab === 'calendar' && 'Calendário de Consistência'}
-            {activeTab === 'profile' && 'Perfis & Gestão Familiar'}
+            {activeTab === 'profile' && 'Perfil'}
           </p>
         </div>
       </div>
@@ -81,24 +77,21 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden md:inline">Resumo do Dia</span>
         </button>
 
-        {/* Profile Switcher */}
+        {/* Current User (static) */}
         <div className="flex items-center space-x-2 bg-dark-850 border border-line rounded-xl px-2.5 py-1">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-            {activeProfile.name.charAt(0)}
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 overflow-hidden shrink-0">
+            {activeProfile.avatar_url ? (
+              <img src={activeProfile.avatar_url} alt={activeProfile.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+                {activeProfile.name.charAt(0)}
+              </div>
+            )}
           </div>
-          <div className="hidden sm:block text-left">
-            <select
-              value={activeProfile.id}
-              onChange={(e) => onSwitchProfile(e.target.value)}
-              aria-label="Selecionar perfil"
-              className="bg-transparent text-xs font-semibold text-content-secondary focus:outline-none cursor-pointer pr-1"
-            >
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id} className="bg-dark-900 text-white">
-                  {p.nickname || p.name} ({p.role === 'admin' ? 'Titular' : 'Família'})
-                </option>
-              ))}
-            </select>
+          <div className="hidden sm:block">
+            <span className="text-xs font-semibold text-white">
+              {activeProfile.nickname || activeProfile.name}
+            </span>
           </div>
         </div>
 

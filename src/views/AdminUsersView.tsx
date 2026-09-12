@@ -26,19 +26,21 @@ interface AdminUsersViewProps {
   onLoad: () => Promise<void>;
   onToggleActive: (accountId: string, isActive: boolean) => Promise<void>;
   onSetExpiration: (accountId: string, expiresAt: string | null, days?: number) => Promise<void>;
-  onCreateUser?: (input: { name: string; cpf: string; birthDate: string; email?: string }, password: string) => Promise<void>;
-  onUpdateUser?: (accountId: string, data: { name?: string; cpf?: string; birth_date?: string; email?: string; gender?: string }) => Promise<void>;
+  onCreateUser?: (input: { name: string; cpf: string; birthDate: string; email?: string; nickname: string; avatarUrl?: string }, password: string) => Promise<void>;
+  onUpdateUser?: (accountId: string, data: { name?: string; cpf?: string; birth_date?: string; email?: string; gender?: string; nickname?: string; avatar_url?: string }) => Promise<void>;
   onUpdatePassword?: (accountId: string, newPassword: string) => Promise<void>;
   error: string | null;
 }
 
 const EditUserModal: React.FC<{
   user: UserWithProfile;
-  onSave: (data: { name?: string; cpf?: string; birth_date?: string; email?: string }) => Promise<void>;
+  onSave: (data: { name?: string; cpf?: string; birth_date?: string; email?: string; nickname?: string; avatar_url?: string }) => Promise<void>;
   onSavePassword?: (newPassword: string) => Promise<void>;
   onClose: () => void;
 }> = ({ user, onSave, onSavePassword, onClose }) => {
   const [name, setName] = useState(user.profile?.name || '');
+  const [nickname, setNickname] = useState(user.profile?.nickname || '');
+  const [avatarUrl, setAvatarUrl] = useState(user.profile?.avatar_url || '');
   const [cpf, setCpf] = useState(user.profile?.cpf || '');
   const [birthDate, setBirthDate] = useState(user.profile?.birth_date || '');
   const [email, setEmail] = useState(user.profile?.email || '');
@@ -62,7 +64,7 @@ const EditUserModal: React.FC<{
     if (digits.length !== 11) { setError('CPF deve ter 11 dígitos.'); return; }
     setSaving(true);
     try {
-      await onSave({ name: name.trim(), cpf: digits, birth_date: birthDate, email: email || undefined });
+      await onSave({ name: name.trim(), nickname: nickname.trim(), avatar_url: avatarUrl || undefined, cpf: digits, birth_date: birthDate, email: email || undefined });
       setSuccess('Dados atualizados com sucesso!');
       setTimeout(() => onClose(), 1000);
     } catch (e: any) { setError(e.message); } finally { setSaving(false); }
@@ -95,6 +97,8 @@ const EditUserModal: React.FC<{
         {success && <div className="flex items-start space-x-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"><CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span>{success}</span></div>}
         <div className="space-y-3">
           <input className={inputClass} type="text" placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className={inputClass} type="text" placeholder="Apelido" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+          <input className={inputClass} type="text" placeholder="URL do avatar (opcional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
           <input className={inputClass} type="text" placeholder="CPF" value={cpf} onChange={(e) => setCpf(fmtCPF(e.target.value))} />
           <input className={inputClass} type="date" placeholder="Data de nascimento" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
           <input className={inputClass} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -126,10 +130,12 @@ const EditUserModal: React.FC<{
 };
 
 const CreateUserModal: React.FC<{
-  onSave: (input: { name: string; cpf: string; birthDate: string; email?: string }, password: string) => Promise<void>;
+  onSave: (input: { name: string; cpf: string; birthDate: string; email?: string; nickname: string; avatarUrl?: string }, password: string) => Promise<void>;
   onClose: () => void;
 }> = ({ onSave, onClose }) => {
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [cpf, setCpf] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [email, setEmail] = useState('');
@@ -150,6 +156,7 @@ const CreateUserModal: React.FC<{
   const handleSave = async () => {
     setError('');
     if (!name.trim()) { setError('Informe o nome.'); return; }
+    if (!nickname.trim()) { setError('Informe o apelido.'); return; }
     const digits = cpf.replace(/\D/g, '');
     if (digits.length !== 11) { setError('CPF deve ter 11 dígitos.'); return; }
     if (!birthDate) { setError('Informe a data de nascimento.'); return; }
@@ -157,7 +164,7 @@ const CreateUserModal: React.FC<{
     if (password !== confirmPassword) { setError('As senhas não coincidem.'); return; }
     setSaving(true);
     try {
-      await onSave({ name: name.trim(), cpf: digits, birthDate, email: email || undefined }, password);
+      await onSave({ name: name.trim(), nickname: nickname.trim(), avatarUrl: avatarUrl || undefined, cpf: digits, birthDate, email: email || undefined }, password);
       setSuccess('Usuário criado com sucesso!');
       setTimeout(() => onClose(), 1200);
     } catch (e: any) { setError(e.message); } finally { setSaving(false); }
@@ -176,6 +183,8 @@ const CreateUserModal: React.FC<{
         {success && <div className="flex items-start space-x-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs"><CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span>{success}</span></div>}
         <div className="space-y-3">
           <input className={inputClass} type="text" placeholder="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className={inputClass} type="text" placeholder="Apelido*" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+          <input className={inputClass} type="text" placeholder="URL do avatar (opcional)" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
           <input className={inputClass} type="text" placeholder="CPF (somente números)" value={cpf} onChange={(e) => setCpf(fmtCPF(e.target.value))} />
           <input className={inputClass} type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
           <input className={inputClass} type="email" placeholder="E-mail (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -371,8 +380,14 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
               <div key={user.id} className="p-4 rounded-2xl bg-dark-900 border border-slate-800">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
-                      {user.profile?.name?.charAt(0) || '?'}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 overflow-hidden shrink-0">
+                      {user.profile?.avatar_url ? (
+                        <img src={user.profile.avatar_url} alt={user.profile.name || ''} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                          {user.profile?.name?.charAt(0) || '?'}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">

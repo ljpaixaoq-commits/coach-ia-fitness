@@ -1,0 +1,2885 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 6876
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -40. re
+f
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+1. g
+40. 816.8899999999999864 Td
+(COACH IA PESSOAL | DOCUMENTAÇÃO OFICIAL) Tj
+ET
+BT
+/F2 18 Tf
+20.6999999999999993 TL
+0.059 0.09 0.165 rg
+40. 771.8899999999999864 Td
+(Catálogo de Colunas do Banco de Dados - Coach IA Pessoal) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 746.8899999999999864 Td
+(CATÁLOGO DE COLUNAS DO BANCO DE DADOS) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 722.8899999999999864 Td
+(Coach IA Pessoal - Colunas, Funções, Alimentação e Relacionamentos) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 698.8899999999999864 Td
+(Este documento detalha cada coluna das 17 tabelas do banco Supabase \(PostgreSQL\): tipo, função de cada uma, qual) Tj
+T* (campo do aplicativo alimenta a coluna e, quando existir, o relacionamento com outra tabela/coluna. A visão geral das) Tj
+T* (tabelas está no documento Catalogo_Tabelas_Banco.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 653.8899999999999864 Td
+(Legenda de alimentação:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 638.8899999999999864 Td
+(• "Gerado automaticamente": preenchido pelo próprio aplicativo \(ID, data/hora, cálculo\) ou pelo banco \(default\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 623.8899999999999864 Td
+(• "Não alimentado": a coluna existe no schema, mas nenhuma tela/função do aplicativo grava valor nela hoje) Tj
+T* (\(reservada para uso futuro\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 590.8899999999999864 Td
+(Legenda de relacionamento:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 575.8899999999999864 Td
+(• "FK -> tabela.coluna": coluna é chave estrangeira que aponta para aquela coluna da outra tabela.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 560.8899999999999864 Td
+(• "Referenciada por tabela.coluna": coluna é destino de uma chave estrangeira vinda daquela tabela.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 545.8899999999999864 Td
+(• "Sem relacionamento": coluna não participa de nenhuma chave estrangeira.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 524.8899999999999864 Td
+(A nomenclatura das tabelas e colunas está em português \(ver migration supabase/migration_colunas_pt.sql\). As) Tj
+T* (propriedades internas do aplicativo continuam em inglês \(ex: profile_id, name\) - este documento mostra a correspondência) Tj
+T* (entre as colunas do banco e os campos do aplicativo.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 479.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 458.8899999999999864 Td
+(1. PERFIS - Dados pessoais e objetivos de cada membro da família) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 434.8899999999999864 Td
+(Função da tabela: armazena os perfis de usuários \(Leonardo, Mariana...\) com dados pessoais, metas corporais e) Tj
+T* (configurações diárias \(água, calorias, macros\). É a tabela central: praticamente todas as outras tabelas apontam para ela.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 401.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do perfil. Gerado automaticamente \(UUID textual\). Relacionamento: Referenciada) Tj
+T* (por contas_usuario.perfil_id, treinos.perfil_id, registro_treinos.perfil_id, refeicoes.perfil_id, registro_agua.perfil_id,) Tj
+T* (suplementos.perfil_id, suplemento_consumos.perfil_id, metricas_saude.perfil_id, registro_lesoes.perfil_id,) Tj
+T* (fotos_evolucao.perfil_id, metas.perfil_id, coach_mensagens.perfil_id e coach_resumos_diarios.perfil_id.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 350.8899999999999864 Td
+(• nome \(TEXT\) - Nome completo do perfil. Alimentação: campo "Nome completo" na tela de Cadastro \(AuthView\),) Tj
+T* ("Nome Completo*" no modal Família \(ProfileFamilyView\), "Novo Usuário"/"Editar" no painel Admin \(AdminUsersView\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 311.8899999999999864 Td
+(• apelido \(TEXT\) - Apelido/primeiro nome usado pelo Coach IA nas saudações. Alimentação: modal Família \(quando) Tj
+T* (não informado, vira o primeiro nome\), dados de exemplo \(seed\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 284.8899999999999864 Td
+(• email \(TEXT\) - E-mail de contato. Alimentação: campo "E-mail \(opcional\)" na tela de Cadastro e no Admin.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 257.8899999999999864 Td
+(• url_avatar \(TEXT\) - URL da foto do perfil. Alimentação: Não alimentado por nenhuma tela \(não há upload de avatar) Tj
+T* (no aplicativo\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 230.8899999999999864 Td
+(• papel \(TEXT\) - Papel do usuário: 'admin', 'member' ou 'spouse'. Alimentação: "Parentesco" no modal Família,) Tj
+T* (cadastro de usuário no Admin, primeiro usuário vira 'admin' \(ensureAdminAccount\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 191.8899999999999864 Td
+(• genero \(TEXT\) - Gênero \('male', 'female', 'other'\). Alimentação: "Gênero" no modal Família; default 'other' no) Tj
+T* (cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 164.8899999999999864 Td
+(• idade \(INTEGER\) - Idade em anos. Alimentação: calculada automaticamente a partir da data de nascimento) Tj
+T* (\(calcAge\) no cadastro/edição; campo manual "Idade" no modal Família. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 137.8899999999999864 Td
+(• altura \(NUMERIC\(5,2\)\) - Altura em centímetros \(ex: 178.5\). Alimentação: campo "Altura \(cm\)" no modal Família;) Tj
+T* (default 0 no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 110.8899999999999864 Td
+(• peso_atual \(NUMERIC\(5,2\)\) - Peso atual em kg. Alimentação: campo "Peso \(kg\)" no modal Família; atualizado) Tj
+T* (automaticamente quando o usuário registra uma métrica de saúde com peso \(addHealthMetric em useAppStore\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 71.8899999999999864 Td
+(• peso_objetivo \(NUMERIC\(5,2\)\) - Peso alvo em kg. Alimentação: campo "Peso Alvo / Meta \(kg\)" no modal Família.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 7536
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• percentual_gordura \(NUMERIC\(4,1\)\) - Percentual de gordura corporal. Alimentação: apenas dados de exemplo) Tj
+T* (\(seed\); no dia a dia o aplicativo grava a gordura em metricas_saude.percentual_gordura. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 747.8899999999999864 Td
+(• massa_muscular_kg \(NUMERIC\(5,2\)\) - Massa muscular em kg. Alimentação: apenas dados de exemplo \(seed\); no) Tj
+T* (dia a dia é registrada em metricas_saude.massa_muscular_kg. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 720.8899999999999864 Td
+(• nivel_atividade \(TEXT\) - Nível de atividade: 'sedentary', 'moderate', 'intense', 'athlete'. Alimentação: valor fixo) Tj
+T* ('moderate' no modal Família e no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 693.8899999999999864 Td
+(• objetivo_fitness \(TEXT\) - Objetivo principal: 'lose_weight', 'hypertrophy', 'endurance', 'health'. Alimentação: "Objetivo") Tj
+T* (no modal Família; default 'health' no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 666.8899999999999864 Td
+(• nome_academia \(TEXT\) - Academia frequentada. Alimentação: valor fixo 'Smart Fit Centro' no modal Família; dados) Tj
+T* (de exemplo \(seed\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 639.8899999999999864 Td
+(• horario_preferido_treino \(TEXT\) - Horário preferido para treinar \(ex: '06:30'\). Alimentação: valor fixo '18:30' no modal) Tj
+T* (Família; dados de exemplo \(seed\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 612.8899999999999864 Td
+(• meta_agua_diaria_ml \(INTEGER\) - Meta diária de água em ml. Alimentação: valor fixo no modal Família; default 3000) Tj
+T* (no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 585.8899999999999864 Td
+(• meta_calorias_diaria \(INTEGER\) - Meta diária de calorias \(kcal\). Alimentação: valor fixo no modal Família; default) Tj
+T* (2200 no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 558.8899999999999864 Td
+(• meta_proteina_diaria_g \(INTEGER\) - Meta diária de proteínas em gramas. Alimentação: valor fixo no modal Família;) Tj
+T* (default 160 no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 531.8899999999999864 Td
+(• meta_carboidrato_diaria_g \(INTEGER\) - Meta diária de carboidratos em gramas. Alimentação: valor fixo no modal) Tj
+T* (Família; default 200 no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 504.8899999999999864 Td
+(• meta_gordura_diaria_g \(INTEGER\) - Meta diária de gorduras em gramas. Alimentação: valor fixo no modal Família;) Tj
+T* (default 60 no cadastro. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 477.8899999999999864 Td
+(• cpf \(TEXT\) - CPF do usuário \(usado como login e na recuperação de senha\). Alimentação: campo "CPF" na tela de) Tj
+T* (Cadastro, Login e Admin. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 450.8899999999999864 Td
+(• data_nascimento \(DATE\) - Data de nascimento \(usada na validação do reset de senha\). Alimentação: campo de data) Tj
+T* (nos modais do Admin; nos dados de exemplo \(seed\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 423.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação do registro. Alimentação: default do banco \(NOW\(\)\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 396.8899999999999864 Td
+(• atualizado_em \(TIMESTAMPTZ\) - Data/hora da última atualização. Alimentação: preenchido pelo aplicativo nas) Tj
+T* (edições de perfil \(updateUserProfileAdmin\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 363.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 342.8899999999999864 Td
+(2. CONTAS_USUARIO - Credenciais de login e controle de acesso) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 318.8899999999999864 Td
+(Função da tabela: separa os dados de login \(usuário/senha, status, expiração\) dos dados pessoais. Um perfil \(perfis\)) Tj
+T* (possui no máximo uma conta de acesso.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 285.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da conta. Gerado automaticamente \(UUID textual\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 258.8899999999999864 Td
+(• perfil_id \(TEXT, UNIQUE\) - Perfil dono da conta. Alimentação: gerado automaticamente ao criar a conta \(registerUser,) Tj
+T* (registerUserAdmin, ensureAdminAccount\). Relacionamento: FK -> perfis.id \(1:1, ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 231.8899999999999864 Td
+(• nome_usuario \(TEXT, UNIQUE\) - Nome de usuário; no aplicativo é sempre o CPF sem pontuação. Alimentação:) Tj
+T* (cadastro/login \(AuthView\) e Admin. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 204.8899999999999864 Td
+(• hash_senha \(TEXT\) - Senha criptografada \(SHA-256 + salt via hashPassword\). Alimentação: gerada) Tj
+T* (automaticamente no cadastro, reset de senha, criação por admin e troca de senha. Nunca é gravada em texto puro.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 165.8899999999999864 Td
+(• papel \(TEXT\) - Papel da conta: 'admin' ou 'member'. Alimentação: 'admin' para a primeira conta criada) Tj
+T* (\(ensureAdminAccount\); 'member' no cadastro e na criação pelo Admin. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 138.8899999999999864 Td
+(• ativo \(BOOLEAN\) - Status ativo/inativo \(inativo = aguardando aprovação ou bloqueado\). Alimentação: auto-cadastro) Tj
+T* (grava false; criação pelo Admin grava true; botão "Ativar/Desativar" no painel Admin \(setUserActive\) alterna o valor.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 99.8899999999999864 Td
+(• acesso_expira_em \(DATE\) - Data limite de acesso. Alimentação: modal "Expiração de Acesso" no painel Admin) Tj
+T* (\(setUserExpiration\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 72.8899999999999864 Td
+(• dias_acesso \(INTEGER\) - Quantidade de dias de acesso concedidos \(base para calcular a expiração\). Alimentação:) Tj
+T* (campo "Dias de acesso" no modal "Expiração de Acesso" do Admin. Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 7531
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• ultimo_login_em \(TIMESTAMPTZ\) - Data/hora do último login com sucesso. Alimentação: preenchido) Tj
+T* (automaticamente no login \(loginUser\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• atualizado_em \(TIMESTAMPTZ\) - Data/hora da última atualização. Alimentação: preenchido pelo aplicativo em reset) Tj
+T* (de senha, ativar/desativar, expiração e troca de senha. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 699.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 678.8899999999999864 Td
+(3. TREINOS - Fichas / planos de treino) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 654.8899999999999864 Td
+(Função da tabela: guarda as fichas de treino de cada perfil \(Push, Pull, Legs, etc.\), com categoria, duração, dificuldade e) Tj
+T* (status de conclusão. As fichas podem ser manuais \(seed\) ou geradas pelo Coach IA.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 621.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do treino. Gerado automaticamente \(manual 'w-1' no seed; 'wkt-ai-...' quando) Tj
+T* (gerado pela IA\). Relacionamento: Referenciada por treino_exercicios.treino_id e registro_treinos.treino_id.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 594.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono do treino. Alimentação: gerado automaticamente a partir do perfil ativo \(activeProfile.id\).) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 567.8899999999999864 Td
+(• titulo \(TEXT\) - Título do treino \(ex: "Treino A - Peito, Tríceps & Ombro"\). Alimentação: dados de exemplo \(seed\) ou) Tj
+T* (gerado pelo Coach IA a partir do assistente de 5 passos na tela AICoach \(objetivos, limitações, dias/sessão/nível\). Não) Tj
+T* (há campo manual de título na WorkoutsView. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 528.8899999999999864 Td
+(• subtitulo \(TEXT\) - Subtítulo/resumo \(ex: "3x por semana · ~60 min"\). Alimentação: seed ou gerado pelo Coach IA.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 501.8899999999999864 Td
+(• categoria \(TEXT\) - Categoria do treino: 'Push', 'Pull', 'Legs', 'Full Body', 'Cardio', 'Upper', 'Lower'. Alimentação: seed) Tj
+T* (ou derivada pelo Coach IA do grupo muscular principal \(CATEGORY_MAP\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 474.8899999999999864 Td
+(• dias_da_semana \(INTEGER[]\) - Dias da semana de treino \(1=Seg a 7=Dom\). Alimentação: apenas dados de) Tj
+T* (exemplo \(seed\); o gerador IA grava array vazio []. Nenhuma tela edita diretamente. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 435.8899999999999864 Td
+(• duracao_estimada_min \(INTEGER\) - Duração estimada em minutos. Alimentação: seed ou calculada pelo Coach IA a) Tj
+T* (partir dos exercícios \(soma de séries e descanso\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 408.8899999999999864 Td
+(• dificuldade \(TEXT\) - Nível de dificuldade: 'iniciante', 'intermediary', 'avancado'. Alimentação: seed ou campo "Nível de) Tj
+T* (experiência" do assistente de criação do Coach IA. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 381.8899999999999864 Td
+(• gerado_por_ia \(BOOLEAN\) - Indica se a ficha foi criada pelo Coach IA \(rótulo "Adaptado por IA"\). Alimentação:) Tj
+T* (sempre true para fichas geradas pela IA; false/ausente para fichas manuais. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 354.8899999999999864 Td
+(• ativo \(BOOLEAN\) - Se a ficha está ativa. Alimentação: sempre true no seed e na geração IA; não há chave de) Tj
+T* (ativação em tela. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 327.8899999999999864 Td
+(• concluido \(BOOLEAN\) - Se o treino já foi finalizado. Alimentação: botão "Finalizar Treino" na WorkoutsView,) Tj
+T* (auto-conclusão ao terminar o último exercício e reset ao confirmar o resultado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 300.8899999999999864 Td
+(• ultima_conclusao_em \(TIMESTAMPTZ\) - Quando o treino foi realizado pela última vez. Alimentação: timestamp) Tj
+T* (automático ao finalizar o treino \(finalizeWorkout\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 273.8899999999999864 Td
+(• anotacoes \(TEXT\) - Descrição da ficha \(objetivo, restrições, exercícios\) em markdown. Alimentação: gerada pelo) Tj
+T* (Coach IA; não há campo manual. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 246.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 213.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 192.8899999999999864 Td
+(4. TREINO_EXERCICIOS - Exercícios de cada treino) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 168.8899999999999864 Td
+(Função da tabela: fornece os exercícios \(nome, músculo, séries, repetições, carga, vídeo, instruções\) que pertencem a) Tj
+T* (uma ficha \(treinos\), inclusive as séries executadas em dados_series \(JSONB\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 135.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do exercício. Gerado automaticamente \(seed 'e-...'; IA 'ex-ai-...'\). Relacionamento:) Tj
+T* (Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 108.8899999999999864 Td
+(• treino_id \(TEXT\) - Treino \(ficha\) a que o exercício pertence. Alimentação: gerado automaticamente ao associar os) Tj
+T* (exercícios à ficha \(seed e geração IA\). Relacionamento: FK -> treinos.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 81.8899999999999864 Td
+(• nome \(TEXT\) - Nome do exercício \(ex: "Supino Reto com Barra"\). Alimentação: seed ou banco de exercícios do) Tj
+T* (Coach IA \(EXERCISE_DB\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 54.8899999999999864 Td
+(• grupo_muscular \(TEXT\) - Grupo muscular trabalhado \(Peito, Ombro, Tríceps...\). Alimentação: seed ou template do) Tj
+T* (Coach IA. Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+9 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 10 0 R
+>>
+endobj
+10 0 obj
+<<
+/Length 7638
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• series \(INTEGER\) - Número de séries. Alimentação: seed ou gerado pelo Coach IA com multiplicador por nível de) Tj
+T* (experiência \(0.75/1/1.25\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• repeticoes_alvo \(TEXT\) - Alvo de repetições \(ex: '8-12', '45s', '20 min'\). Alimentação: seed ou template da IA; no) Tj
+T* (modo cardio é atualizado junto com a duração \("X min"\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• peso_padrao_kg \(NUMERIC\(6,2\)\) - Carga padrão em kg. Alimentação: campo "Carga Padrão Atual" na) Tj
+T* (WorkoutsView, com botão "Aplicar em todas" que propaga para todas as séries de dados_series. Relacionamento:) Tj
+T* (Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 693.8899999999999864 Td
+(• descanso_segundos \(INTEGER\) - Tempo de descanso em segundos. Alimentação: seed ou template da IA; usado) Tj
+T* (pelo cronômetro de descanso \(RestTimerWidget\) após cada série. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 666.8899999999999864 Td
+(• url_video_gif \(TEXT\) - URL de GIF demonstrativo. Alimentação: Não alimentado por nenhuma tela \(campo) Tj
+T* (reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 639.8899999999999864 Td
+(• url_video \(TEXT\) - Link do vídeo demonstrativo \(YouTube ou próprio\). Alimentação: seed/template da IA e campo) Tj
+T* (editável "Vídeo demonstrativo \(cole um link do YouTube\)" na WorkoutsView. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 612.8899999999999864 Td
+(• instrucoes_demonstracao \(TEXT\) - Instruções/execução do exercício. Alimentação: seed ou template da IA; exibido) Tj
+T* (como dica \(icone de luz\) na WorkoutsView. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 585.8899999999999864 Td
+(• ordem \(INTEGER\) - Ordem do exercício dentro da ficha. Alimentação: seed ou ordem de geração da IA; usado para) Tj
+T* (ordenar os exercícios na tela. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 558.8899999999999864 Td
+(• concluido \(BOOLEAN\) - Se o exercício foi finalizado. Alimentação: checkbox do exercício na WorkoutsView,) Tj
+T* (auto-conclusão quando todas as séries terminam e término do timer de cardio. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 531.8899999999999864 Td
+(• dados_series \(JSONB\) - Séries do exercício \(numero_serie, repeticoes_alvo, peso_kg, concluido\). Alimentação:) Tj
+T* (geradas automaticamente ao criar o exercício; atualizadas por toque na série \(concluir/desmarcar\), edição de peso) Tj
+T* (série a série, "Aplicar em todas" e ajuste de cardio. É aqui que o aplicativo realmente guarda a execução por série.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 480.8899999999999864 Td
+(• tipo_exercicio \(TEXT\) - Tipo: 'strength', 'cardio' ou 'isometric'. Alimentação: seed ou template da IA; define o modo de) Tj
+T* (execução \(força vs. cardio\) na WorkoutsView. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 453.8899999999999864 Td
+(• duracao_minutos \(INTEGER\) - Duração em minutos \(apenas exercícios de cardio\). Alimentação: seed/template da IA) Tj
+T* (e botão "Ajustar Duração" na WorkoutsView \(modo cardio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 426.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 393.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 372.8899999999999864 Td
+(5. REGISTRO_TREINOS - Histórico de treinos realizados) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 348.8899999999999864 Td
+(Função da tabela: registra cada sessão de treino concluída \(início/fim, duração, volume total\) para consulta e estatística.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 327.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do registro. Gerado automaticamente \('log-...'\). Relacionamento: Referenciada por) Tj
+T* (registro_treino_series.registro_treino_id.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 300.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil que realizou o treino. Alimentação: gerado automaticamente a partir do perfil ativo.) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 273.8899999999999864 Td
+(• treino_id \(TEXT\) - Treino \(ficha\) realizada. Alimentação: gerado automaticamente ao finalizar a ficha.) Tj
+T* (Relacionamento: FK -> treinos.id \(ON DELETE SET NULL\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 246.8899999999999864 Td
+(• titulo_treino \(TEXT\) - Título do treino no momento da execução \(foto do título, usado no rótulo "Último treino) Tj
+T* (realizado"\). Alimentação: automático ao finalizar. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 219.8899999999999864 Td
+(• iniciado_em \(TIMESTAMPTZ\) - Início da sessão. Alimentação: automático - gravado na primeira interação \(primeira) Tj
+T* (série, primeiro checkbox ou start do cardio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 192.8899999999999864 Td
+(• concluido_em \(TIMESTAMPTZ\) - Fim da sessão. Alimentação: automático ao clicar em "Finalizar Treino" ou ao) Tj
+T* (completar todos os exercícios. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 165.8899999999999864 Td
+(• duracao_segundos \(INTEGER\) - Duração total em segundos. Alimentação: calculada automaticamente ao finalizar) Tj
+T* (\(início menos fim; fallback para a duração estimada se não houve interação\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 138.8899999999999864 Td
+(• volume_total_kg \(NUMERIC\(10,2\)\) - Volume total levantado \(soma de peso x repeticoes das séries concluídas\).) Tj
+T* (Alimentação: calculado automaticamente ao finalizar o treino \(computeTotalVolume\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 99.8899999999999864 Td
+(• calorias_queimadas \(INTEGER\) - Calorias gastas. Alimentação: Não alimentado por nenhuma tela \(campo) Tj
+T* (reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 72.8899999999999864 Td
+(• esforco_rpe \(INTEGER\) - Nível de esforço percebido \(1 a 10\). Alimentação: Não alimentado por nenhuma tela) Tj
+T* (\(campo reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+11 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 12 0 R
+>>
+endobj
+12 0 obj
+<<
+/Length 6909
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• feedback_usuario \(TEXT\) - Feedback/observação do usuário. Alimentação: Não alimentado por nenhuma tela \(campo) Tj
+T* (reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• feedback_ia \(TEXT\) - Feedback/comentário do Coach IA. Alimentação: Não alimentado por nenhuma tela \(campo) Tj
+T* (reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 699.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 678.8899999999999864 Td
+(6. REGISTRO_TREINO_SERIES - Séries detalhadas do histórico de treino) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 654.8899999999999864 Td
+(Função da tabela: entidade pensada para detalhar série a série cada treino realizado. ATENÇÃO: hoje o aplicativo não) Tj
+T* (grava nesta tabela; a execução por série fica em treino_exercicios.dados_series. A tabela foi mantida no schema para uso) Tj
+T* (futuro.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 609.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da série. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 594.8899999999999864 Td
+(• registro_treino_id \(TEXT\) - Registro de treino realizado a que pertence a série. Alimentação: Não alimentado.) Tj
+T* (Relacionamento: FK -> registro_treinos.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 567.8899999999999864 Td
+(• nome_exercicio \(TEXT\) - Nome do exercício executado. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 540.8899999999999864 Td
+(• numero_serie \(INTEGER\) - Número da série. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 525.8899999999999864 Td
+(• repeticoes_realizadas \(INTEGER\) - Repetições efetivamente realizadas. Alimentação: Não alimentado.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 498.8899999999999864 Td
+(• peso_kg \(NUMERIC\(6,2\)\) - Peso usado na série. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 471.8899999999999864 Td
+(• e_recorde_pessoal \(BOOLEAN\) - Se a série foi recorde pessoal. Alimentação: Não alimentado. Relacionamento:) Tj
+T* (Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 444.8899999999999864 Td
+(• anotacoes \(TEXT\) - Anotações da série. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 429.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 396.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 375.8899999999999864 Td
+(7. REFEICOES - Refeições diárias) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 351.8899999999999864 Td
+(Função da tabela: registra as refeições do dia por perfil, com tipo, título e totais de calorias e macronutrientes.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 330.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da refeição. Gerado automaticamente \('meal-...'\). Relacionamento: Referenciada) Tj
+T* (por refeicao_itens.refeicao_id.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 303.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono da refeição. Alimentação: gerado automaticamente a partir do perfil ativo.) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 276.8899999999999864 Td
+(• tipo_refeicao \(TEXT\) - Tipo: 'breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'. Alimentação: campo) Tj
+T* ("Tipo de Refeição" \(seleção\) na tela Nutrição \(NutritionView\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 249.8899999999999864 Td
+(• titulo \(TEXT\) - Título/descrição da refeição. Alimentação: campo "Título da Refeição*" na tela Nutrição.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 222.8899999999999864 Td
+(• consumida_em \(TIMESTAMPTZ\) - Data/hora em que foi consumida. Alimentação: automático \(data/hora atual ao) Tj
+T* (salvar\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 195.8899999999999864 Td
+(• total_calorias \(INTEGER\) - Total de calorias \(kcal\). Alimentação: campo "Calorias \(kcal\)*" na tela Nutrição.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 168.8899999999999864 Td
+(• total_proteina_g \(NUMERIC\(6,1\)\) - Total de proteínas \(g\). Alimentação: campo "Proteínas \(g\)" na tela Nutrição.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 141.8899999999999864 Td
+(• total_carboidratos_g \(NUMERIC\(6,1\)\) - Total de carboidratos \(g\). Alimentação: campo "Carboidratos \(g\)" na tela) Tj
+T* (Nutrição. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 114.8899999999999864 Td
+(• total_gorduras_g \(NUMERIC\(6,1\)\) - Total de gorduras \(g\). Alimentação: campo "Gorduras \(g\)" na tela Nutrição.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 87.8899999999999864 Td
+(• anotacoes \(TEXT\) - Observações da refeição. Alimentação: Não alimentado por nenhuma tela \(campo reservado\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 60.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+endstream
+endobj
+13 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 14 0 R
+>>
+endobj
+14 0 obj
+<<
+/Length 6643
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 786.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 765.8899999999999864 Td
+(8. REFEICAO_ITENS - Itens de cada refeição) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 741.8899999999999864 Td
+(Função da tabela: entidade pensada para detalhar os alimentos de cada refeição \(nome, porção, calorias, macros\).) Tj
+T* (ATENÇÃO: hoje o aplicativo não grava nesta tabela - a tela Nutrição preenche os totais diretamente em refeicoes. Mantida) Tj
+T* (para uso futuro.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 696.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do item. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 681.8899999999999864 Td
+(• refeicao_id \(TEXT\) - Refeição a que o item pertence. Alimentação: Não alimentado. Relacionamento: FK ->) Tj
+T* (refeicoes.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 654.8899999999999864 Td
+(• nome_alimento \(TEXT\) - Nome do alimento. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 639.8899999999999864 Td
+(• porcao_g \(NUMERIC\(6,1\)\) - Porção em gramas. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 612.8899999999999864 Td
+(• calorias \(INTEGER\) - Calorias do alimento. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 597.8899999999999864 Td
+(• proteina_g \(NUMERIC\(6,1\)\) - Proteínas do alimento \(g\). Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 570.8899999999999864 Td
+(• carboidratos_g \(NUMERIC\(6,1\)\) - Carboidratos do alimento \(g\). Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 543.8899999999999864 Td
+(• gorduras_g \(NUMERIC\(6,1\)\) - Gorduras do alimento \(g\). Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 516.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 483.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 462.8899999999999864 Td
+(9. REGISTRO_AGUA - Ingestão de água) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 438.8899999999999864 Td
+(Função da tabela: registra cada consumo de água do dia \(quanto e quando\) para controle da meta diária.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 417.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do registro. Gerado automaticamente \('wtr-...'\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 390.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil que registrou a água. Alimentação: gerado automaticamente a partir do perfil ativo.) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 363.8899999999999864 Td
+(• quantidade_ml \(INTEGER\) - Quantidade de água em ml. Alimentação: botões "+250 ml" e "+500 ml" na tela Nutrição.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 336.8899999999999864 Td
+(• registrado_em \(TIMESTAMPTZ\) - Data/hora em que foi registrado. Alimentação: automático \(data/hora atual ao) Tj
+T* (registrar\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 303.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 282.8899999999999864 Td
+(10. SUPLEMENTOS - Suplementos e mistura personalizada) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 258.8899999999999864 Td
+(Função da tabela: cadastra os suplementos do perfil \(nome, dosagem, estoque, horário\), inclusive a Mistura Personalizada) Tj
+T* (Pré-Treino.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 225.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do suplemento. Gerado automaticamente \('supp-...'\). Relacionamento:) Tj
+T* (Referenciada por suplemento_consumos.suplemento_id.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 198.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono do suplemento. Alimentação: gerado automaticamente a partir do perfil ativo.) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 171.8899999999999864 Td
+(• nome \(TEXT\) - Nome do suplemento. Alimentação: campo "Nome do Suplemento*" na tela Suplementos) Tj
+T* (\(SupplementsView\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 144.8899999999999864 Td
+(• e_mistura_personalizada \(BOOLEAN\) - Se é a mistura personalizada exclusiva. Alimentação: checkbox "É a Mistura) Tj
+T* (Personalizada exclusiva?" na tela Suplementos. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 117.8899999999999864 Td
+(• dosagem \(TEXT\) - Dosagem diária \(ex: "1 scoop \(16g\)"\). Alimentação: campo "Dosagem Diária*" na tela) Tj
+T* (Suplementos. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 90.8899999999999864 Td
+(• formula_receita \(TEXT\) - Receita/composição da mistura manipulada. Alimentação: campo "Receita / Composição) Tj
+T* (\(se manipulado\)" na tela Suplementos. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 63.8899999999999864 Td
+(• horario_recomendado \(TEXT\) - Horário recomendado de ingestão. Alimentação: campo "Horário de Ingestão" na tela) Tj
+T* (Suplementos \(padrão "Horário habitual" se vazio\). Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+15 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 16 0 R
+>>
+endobj
+16 0 obj
+<<
+/Length 6885
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• estoque_atual_doses \(INTEGER\) - Estoque atual em doses. Alimentação: campo "Estoque Inicial \(doses\)" ao) Tj
+T* (cadastrar; o botão "Tomar Dose" decresce o estoque \(takeSupplementDose\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• alerta_estoque_minimo \(INTEGER\) - Estoque mínimo para alerta de reposição. Alimentação: valor fixo 7 na tela) Tj
+T* (Suplementos \(sem campo próprio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• unidade \(TEXT\) - Unidade do estoque \(ex: 'doses', 'cápsulas'\). Alimentação: valor fixo 'doses' na tela Suplementos) Tj
+T* (\(sem campo próprio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 705.8899999999999864 Td
+(• anotacoes \(TEXT\) - Observações sobre o suplemento. Alimentação: Não alimentado por nenhuma tela \(campo) Tj
+T* (reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 678.8899999999999864 Td
+(• ativo \(BOOLEAN\) - Se o suplemento está ativo. Alimentação: valor fixo true ao criar na tela Suplementos \(sem chave) Tj
+T* (de ativação\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 651.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 618.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 597.8899999999999864 Td
+(11. SUPLEMENTO_CONSUMOS - Consumo de suplementos \(histórico\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 573.8899999999999864 Td
+(Função da tabela: entidade pensada para o histórico de doses ingeridas de cada suplemento. ATENÇÃO: hoje o aplicativo) Tj
+T* (não grava nesta tabela - o botão "Tomar Dose" apenas reduz o estoque em suplementos. Mantida para uso futuro.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 540.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do consumo. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 525.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil que consumiu o suplemento. Alimentação: Não alimentado. Relacionamento: FK -> perfis.id) Tj
+T* (\(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 498.8899999999999864 Td
+(• suplemento_id \(TEXT\) - Suplemento consumido. Alimentação: Não alimentado. Relacionamento: FK ->) Tj
+T* (suplementos.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 471.8899999999999864 Td
+(• tomado_em \(TIMESTAMPTZ\) - Data/hora em que foi tomado. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 444.8899999999999864 Td
+(• anotacoes \(TEXT\) - Observações do consumo. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 423.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 402.8899999999999864 Td
+(12. METRICAS_SAUDE - Saúde e métricas clínicas) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 378.8899999999999864 Td
+(Função da tabela: registra medições do dia \(peso, IMC, gordura, massa, medidas corporais\) para acompanhamento da) Tj
+T* (evolução.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 345.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da medição. Gerado automaticamente \('hm-...'\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 318.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil da medição. Alimentação: gerado automaticamente a partir do perfil ativo. Relacionamento:) Tj
+T* (FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 291.8899999999999864 Td
+(• medido_em \(TIMESTAMPTZ\) - Data/hora da medição. Alimentação: automático \(data de hoje ao registrar na tela) Tj
+T* (Evolução\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 264.8899999999999864 Td
+(• peso_kg \(NUMERIC\(5,2\)\) - Peso medido \(kg\). Alimentação: campo "Peso Atual \(kg\)*" na tela Evolução) Tj
+T* (\(EvolutionView\); também espelha o peso atual do perfil. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 237.8899999999999864 Td
+(• imc \(NUMERIC\(4,1\)\) - Índice de Massa Corporal. Alimentação: calculado automaticamente \(peso / altura²\) ao) Tj
+T* (registrar na tela Evolução. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 210.8899999999999864 Td
+(• percentual_gordura \(NUMERIC\(4,1\)\) - Percentual de gordura. Alimentação: campo "% de Gordura" na tela Evolução.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 183.8899999999999864 Td
+(• massa_muscular_kg \(NUMERIC\(5,2\)\) - Massa muscular \(kg\). Alimentação: campo "Massa Muscular \(kg\)" na tela) Tj
+T* (Evolução. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 156.8899999999999864 Td
+(• pressao_sistolica \(INTEGER\) - Pressão arterial sistólica. Alimentação: Não alimentado por nenhuma tela \(exibido) Tj
+T* (como valor fixo na tela Saúde\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 129.8899999999999864 Td
+(• pressao_diastolica \(INTEGER\) - Pressão arterial diastólica. Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 102.8899999999999864 Td
+(• frequencia_cardiaca_bpm \(INTEGER\) - Frequência cardíaca \(bpm\). Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 75.8899999999999864 Td
+(• glicemia_mg_dl \(NUMERIC\(5,1\)\) - Glicemia \(mg/dL\). Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+17 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 18 0 R
+>>
+endobj
+18 0 obj
+<<
+/Length 7090
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• horas_sono \(NUMERIC\(4,2\)\) - Horas de sono da noite. Alimentação: Não alimentado por nenhuma tela \(usado pela) Tj
+T* (IA no resumo diário com fallback\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• qualidade_sono \(INTEGER\) - Qualidade do sono \(1 a 5\). Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• nivel_energia \(INTEGER\) - Nível de energia \(1 a 10\). Alimentação: Não alimentado por nenhuma tela \(usado pela IA) Tj
+T* (no resumo diário com fallback\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 705.8899999999999864 Td
+(• peito_cm \(NUMERIC\(5,1\)\) - Medida do peito \(cm\). Alimentação: campo previsto na tela Evolução, mas hoje sem input) Tj
+T* (vinculado \(value fica vazio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 678.8899999999999864 Td
+(• cintura_cm \(NUMERIC\(5,1\)\) - Medida da cintura \(cm\). Alimentação: campo "Cintura \(cm\)" na tela Evolução.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 651.8899999999999864 Td
+(• abdome_cm \(NUMERIC\(5,1\)\) - Medida do abdome \(cm\). Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 624.8899999999999864 Td
+(• quadril_cm \(NUMERIC\(5,1\)\) - Medida do quadril \(cm\). Alimentação: Não alimentado por nenhuma tela.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 597.8899999999999864 Td
+(• braco_direito_cm \(NUMERIC\(5,1\)\) - Medida do braço direito \(cm\). Alimentação: campo "Braço Direito \(cm\)" na tela) Tj
+T* (Evolução. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 570.8899999999999864 Td
+(• braco_esquerdo_cm \(NUMERIC\(5,1\)\) - Medida do braço esquerdo \(cm\). Alimentação: Não alimentado por nenhuma) Tj
+T* (tela. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 543.8899999999999864 Td
+(• coxa_direita_cm \(NUMERIC\(5,1\)\) - Medida da coxa direita \(cm\). Alimentação: campo previsto na tela Evolução, mas) Tj
+T* (hoje sem input vinculado \(value fica vazio\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 516.8899999999999864 Td
+(• coxa_esquerda_cm \(NUMERIC\(5,1\)\) - Medida da coxa esquerda \(cm\). Alimentação: Não alimentado por nenhuma) Tj
+T* (tela. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 489.8899999999999864 Td
+(• anotacoes \(TEXT\) - Observações da medição. Alimentação: Não alimentado por nenhuma tela. Relacionamento:) Tj
+T* (Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 462.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 429.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 408.8899999999999864 Td
+(13. REGISTRO_LESOES - Lesões, dores e histórico clínico) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 384.8899999999999864 Td
+(Função da tabela: registra lesões/dores \(ex: tendinopatia patelar no joelho direito\) com nível de dor, restrições e exercícios) Tj
+T* (recomendados - usado pelo Coach IA para adaptar treinos.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 351.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do registro. Gerado automaticamente \('inj-...'\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 324.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono do registro. Alimentação: gerado automaticamente a partir do perfil ativo.) Tj
+T* (Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 297.8899999999999864 Td
+(• parte_corpo \(TEXT\) - Local do corpo afetado \(ex: "Joelho Direito"\). Alimentação: campo "Local do Corpo*" na tela) Tj
+T* (Saúde \(HealthView\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 270.8899999999999864 Td
+(• nivel_dor \(INTEGER, check 0-10\) - Nível de dor na escala 0 a 10. Alimentação: slider "Nível Inicial de Dor \(0 a 10\)" na) Tj
+T* (tela Saúde; também atualizado pelo slider de destaque do lesão. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 243.8899999999999864 Td
+(• status \(TEXT\) - Status do acompanhamento: 'active', 'monitoring', 'recovered'. Alimentação: valor fixo 'monitoring' ao) Tj
+T* (criar na tela Saúde. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 216.8899999999999864 Td
+(• data_lesao \(DATE\) - Data da lesão/início. Alimentação: Não alimentado por nenhuma tela \(exibido com fallback\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 189.8899999999999864 Td
+(• sintomas \(TEXT\) - Sintomas / movimentos que incomodam. Alimentação: campo "Sintomas / Movimentos que) Tj
+T* (incomodam" na tela Saúde. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 162.8899999999999864 Td
+(• exercicios_restritos \(TEXT[]\) - Exercícios que devem ser evitados. Alimentação: valor fixo ['Sobrecarga extrema'] ao) Tj
+T* (criar na tela Saúde. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 135.8899999999999864 Td
+(• exercicios_recomendados \(TEXT[]\) - Exercícios recomendados. Alimentação: valor fixo ['Isometria', 'Mobilidade'] ao) Tj
+T* (criar na tela Saúde. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 108.8899999999999864 Td
+(• anotacoes_tratamento \(TEXT\) - Tratamento / cuidados. Alimentação: campo "Tratamento / Cuidados" na tela Saúde.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 81.8899999999999864 Td
+(• registrado_em \(TIMESTAMPTZ\) - Data/hora do registro. Alimentação: automático \(data/hora atual ao registrar\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+19 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 20 0 R
+>>
+endobj
+20 0 obj
+<<
+/Length 6622
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 786.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 765.8899999999999864 Td
+(14. FOTOS_EVOLUCAO - Fotos de evolução física) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 741.8899999999999864 Td
+(Função da tabela: armazena as fotos de evolução \(frente/lado/costas\) com data e peso do dia.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 720.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da foto. Gerado automaticamente \('photo-...'\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 693.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono da foto. Alimentação: gerado automaticamente a partir do perfil ativo. Relacionamento:) Tj
+T* (FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 666.8899999999999864 Td
+(• tipo_foto \(TEXT\) - Ângulo da foto: 'front', 'side' ou 'back'. Alimentação: seletor "Frente / Lado / Costas" na tela Fotos) Tj
+T* (\(PhotosView\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 639.8899999999999864 Td
+(• url_foto \(TEXT\) - URL da imagem/foto. Alimentação: campo "URL da Imagem / Foto*" \(input de URL\) na tela Fotos.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 612.8899999999999864 Td
+(• peso_kg \(NUMERIC\(5,2\)\) - Peso no dia da foto \(kg\). Alimentação: campo "Peso no Dia \(kg\)" na tela Fotos.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 585.8899999999999864 Td
+(• percentual_gordura \(NUMERIC\(4,1\)\) - Percentual de gordura no registro da foto. Alimentação: Não alimentado por) Tj
+T* (nenhuma tela \(campo reservado\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 558.8899999999999864 Td
+(• tirada_em \(DATE\) - Data em que a foto foi tirada/registrada. Alimentação: automático \(data de hoje ao salvar\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 531.8899999999999864 Td
+(• anotacoes \(TEXT\) - Observações da foto. Alimentação: campo "Observações" na tela Fotos. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 504.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 471.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 450.8899999999999864 Td
+(15. METAS - Metas e hábitos) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 426.8899999999999864 Td
+(Função da tabela: acompanha metas \(peso, frequência de treino, água, sono, passos, nutrição\) com valor atual, valor alvo) Tj
+T* (e unidade.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 393.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da meta. Gerado automaticamente \('goal-...'\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 366.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono da meta. Alimentação: gerado automaticamente a partir do perfil ativo. Relacionamento:) Tj
+T* (FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 339.8899999999999864 Td
+(• titulo \(TEXT\) - Título da meta \(ex: "Perder 9,5 kg"\). Alimentação: campo "Título da Meta*" na tela Metas \(GoalsView\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 312.8899999999999864 Td
+(• categoria \(TEXT\) - Categoria: 'weight', 'workout_frequency', 'water', 'sleep', 'steps', 'nutrition'. Alimentação: campo) Tj
+T* ("Categoria" \(seleção\) na tela Metas. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 285.8899999999999864 Td
+(• valor_atual \(NUMERIC\(10,2\)\) - Valor atual da meta. Alimentação: campo "Valor Atual" na tela Metas.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 258.8899999999999864 Td
+(• valor_objetivo \(NUMERIC\(10,2\)\) - Valor alvo da meta. Alimentação: campo "Valor Alvo \(Meta\)*" na tela Metas.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 231.8899999999999864 Td
+(• unidade \(TEXT\) - Unidade de medida \(ex: 'kg', 'litros', 'horas', 'passos'\). Alimentação: campo "Unidade" na tela Metas) Tj
+T* (\(padrão 'kg'\). Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 204.8899999999999864 Td
+(• prazo \(DATE\) - Prazo/data limite da meta. Alimentação: Não alimentado por nenhuma tela \(campo reservado\).) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 177.8899999999999864 Td
+(• status \(TEXT\) - Status: 'in_progress', 'completed', 'paused'. Alimentação: valor fixo 'in_progress' ao criar na tela) Tj
+T* (Metas. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 150.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 117.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 96.8899999999999864 Td
+(16. COACH_MENSAGENS - Interações com o Coach IA \(chat\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 72.8899999999999864 Td
+(Função da tabela: guarda o histórico de mensagens do chat com o Coach IA \(usuário e IA\) e suas ações sugeridas.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 51.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único da mensagem. Alimentação: gerado pelo aplicativo ao enviar/responder no chat.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+endstream
+endobj
+21 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 22 0 R
+>>
+endobj
+22 0 obj
+<<
+/Length 6955
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil que conversou com a IA. Alimentação: gerado automaticamente a partir do perfil ativo) Tj
+T* (\(sendAICoachMessage\). Relacionamento: FK -> perfis.id \(ON DELETE CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 759.8899999999999864 Td
+(• remetente \(TEXT\) - Quem enviou: 'user' ou 'ai'. Alimentação: automático no envio de mensagem do usuário e na) Tj
+T* (resposta do Coach IA. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 732.8899999999999864 Td
+(• mensagem \(TEXT\) - Texto da mensagem. Alimentação: campo de texto do chat na tela Coach IA \(AICoachView\) e) Tj
+T* (texto gerado pela IA. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 705.8899999999999864 Td
+(• tipo_intencao \(TEXT\) - Intenção detectada na resposta: 'energy_low', 'injury_pain', 'workout_too_heavy', 'low_sleep',) Tj
+T* ('nutrition_advice', 'general'. Alimentação: gerado pelo motor da IA \(processAICoachPrompt\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 666.8899999999999864 Td
+(• acoes_sugeridas \(JSONB\) - Ações sugeridas pela IA \(ação, rótulo e detalhes\). Alimentação: gerado pelo motor da IA.) Tj
+T* (Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 639.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora da mensagem. Alimentação: default do banco \(NOW\(\)\). Relacionamento:) Tj
+T* (Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 606.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 585.8899999999999864 Td
+(17. COACH_RESUMOS_DIARIOS - Resumos inteligentes do dia) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 561.8899999999999864 Td
+(Função da tabela: guarda o resumo diário gerado pela IA \(saudação, sono, peso, treino recomendado, energia, hidratação,) Tj
+T* (suplemento e progresso de metas\). ATENÇÃO: hoje a IA gera o resumo em memória \(lib/ai-coach.ts\) e o aplicativo não) Tj
+T* (persiste nesta tabela - mantida para uso futuro \(um resumo por perfil por dia\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 516.8899999999999864 Td
+(• id \(TEXT, PK\) - Identificador único do resumo. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 501.8899999999999864 Td
+(• perfil_id \(TEXT\) - Perfil dono do resumo. Alimentação: Não alimentado. Relacionamento: FK -> perfis.id \(ON DELETE) Tj
+T* (CASCADE\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 474.8899999999999864 Td
+(• data_resumo \(DATE\) - Data do resumo \(chave junto com o perfil\). Alimentação: Não alimentado. Relacionamento:) Tj
+T* (Sem relacionamento \(participa do UNIQUE perfil_id + data_resumo\).) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 447.8899999999999864 Td
+(• saudacao \(TEXT\) - Saudação do dia \(ex: "Bom dia, Leonardo!"\). Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 420.8899999999999864 Td
+(• resumo_sono \(TEXT\) - Resumo do sono. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 405.8899999999999864 Td
+(• tendencia_peso \(TEXT\) - Tendência do peso. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 390.8899999999999864 Td
+(• recomendacao_treino \(TEXT\) - Recomendação de treino do dia. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 363.8899999999999864 Td
+(• status_energia \(TEXT\) - Status de energia. Alimentação: Não alimentado. Relacionamento: Sem relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 348.8899999999999864 Td
+(• conselho_hidratacao \(TEXT\) - Conselho de hidratação. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 321.8899999999999864 Td
+(• lembrete_suplemento \(TEXT\) - Lembrete de suplemento. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 294.8899999999999864 Td
+(• progresso_metas \(TEXT\) - Progresso das metas. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 267.8899999999999864 Td
+(• markdown_completo \(TEXT\) - Resumo completo em markdown. Alimentação: Não alimentado. Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 240.8899999999999864 Td
+(• criado_em \(TIMESTAMPTZ\) - Data/hora de criação. Alimentação: default do banco \(NOW\(\)\). Relacionamento: Sem) Tj
+T* (relacionamento.) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+40. 207.8899999999999864 Td
+(---) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 186.8899999999999864 Td
+(Resumo dos relacionamentos \(chaves estrangeiras\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 162.8899999999999864 Td
+(• contas_usuario.perfil_id -> perfis.id \(1:1, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 147.8899999999999864 Td
+(• treinos.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 132.8899999999999864 Td
+(• treino_exercicios.treino_id -> treinos.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 117.8899999999999864 Td
+(• registro_treinos.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 102.8899999999999864 Td
+(• registro_treinos.treino_id -> treinos.id \(1:N, SET NULL\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 87.8899999999999864 Td
+(• registro_treino_series.registro_treino_id -> registro_treinos.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 72.8899999999999864 Td
+(• refeicoes.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 57.8899999999999864 Td
+(• refeicao_itens.refeicao_id -> refeicoes.id \(1:N, CASCADE\)) Tj
+ET
+endstream
+endobj
+23 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 24 0 R
+>>
+endobj
+24 0 obj
+<<
+/Length 4058
+>>
+stream
+0.200025 w
+0 G
+0.06 0.09 0.16 rg
+0. 841.8899999999999864 595.2799999999999727 -30. re
+f
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+1. g
+40. 821.8899999999999864 Td
+(COACH IA PESSOAL) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 786.8899999999999864 Td
+(• registro_agua.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 771.8899999999999864 Td
+(• suplementos.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 756.8899999999999864 Td
+(• suplemento_consumos.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 741.8899999999999864 Td
+(• suplemento_consumos.suplemento_id -> suplementos.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 726.8899999999999864 Td
+(• metricas_saude.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 711.8899999999999864 Td
+(• registro_lesoes.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 696.8899999999999864 Td
+(• fotos_evolucao.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 681.8899999999999864 Td
+(• metas.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 666.8899999999999864 Td
+(• coach_mensagens.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 651.8899999999999864 Td
+(• coach_resumos_diarios.perfil_id -> perfis.id \(1:N, CASCADE\)) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.145 0.388 0.922 rg
+40. 630.8899999999999864 Td
+(Colunas do schema não alimentadas pelo aplicativo hoje \(importantes para manutenção\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 606.8899999999999864 Td
+(• perfis: url_avatar, percentual_gordura, massa_muscular_kg \(só seed\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 591.8899999999999864 Td
+(• treino_exercicios: url_video_gif) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 576.8899999999999864 Td
+(• registro_treinos: calorias_queimadas, esforco_rpe, feedback_usuario, feedback_ia) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 561.8899999999999864 Td
+(• registro_treino_series: tabela inteira \(execução por série fica em treino_exercicios.dados_series\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 546.8899999999999864 Td
+(• refeicao_itens: tabela inteira \(totais gravados direto em refeicoes\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 531.8899999999999864 Td
+(• suplemento_consumos: tabela inteira \(botão "Tomar Dose" só reduz estoque\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 516.8899999999999864 Td
+(• metricas_saude: pressao_sistolica, pressao_diastolica, frequencia_cardiaca_bpm, glicemia_mg_dl, horas_sono,) Tj
+T* (qualidade_sono, nivel_energia, abdome_cm, quadril_cm, braco_esquerdo_cm, coxa_esquerda_cm, anotacoes) Tj
+T* (\(peito_cm e coxa_direita_cm previstos, mas sem input vinculado\)) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 477.8899999999999864 Td
+(• registro_lesoes: data_lesao) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 462.8899999999999864 Td
+(• refeicoes: anotacoes) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 447.8899999999999864 Td
+(• suplementos: anotacoes) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 432.8899999999999864 Td
+(• fotos_evolucao: percentual_gordura) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 417.8899999999999864 Td
+(• metas: prazo) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+55. 402.8899999999999864 Td
+(• coach_resumos_diarios: tabela inteira \(resumo gerado e exibido, não persistido\)) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R ]
+/Count 11
+>>
+endobj
+25 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+26 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+27 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+28 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+29 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+30 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+31 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+32 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+33 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+34 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+35 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+36 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+37 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+38 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 25 0 R
+/F2 26 0 R
+/F3 27 0 R
+/F4 28 0 R
+/F5 29 0 R
+/F6 30 0 R
+/F7 31 0 R
+/F8 32 0 R
+/F9 33 0 R
+/F10 34 0 R
+/F11 35 0 R
+/F12 36 0 R
+/F13 37 0 R
+/F14 38 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+39 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260911150114-03'00')
+>>
+endobj
+40 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 41
+0000000000 65535 f 
+0000076860 00000 n 
+0000078750 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000007080 00000 n 
+0000007217 00000 n 
+0000014805 00000 n 
+0000014942 00000 n 
+0000022525 00000 n 
+0000022663 00000 n 
+0000030354 00000 n 
+0000030493 00000 n 
+0000037455 00000 n 
+0000037594 00000 n 
+0000044290 00000 n 
+0000044429 00000 n 
+0000051367 00000 n 
+0000051506 00000 n 
+0000058649 00000 n 
+0000058788 00000 n 
+0000065463 00000 n 
+0000065602 00000 n 
+0000072610 00000 n 
+0000072749 00000 n 
+0000076985 00000 n 
+0000077111 00000 n 
+0000077242 00000 n 
+0000077376 00000 n 
+0000077514 00000 n 
+0000077638 00000 n 
+0000077767 00000 n 
+0000077899 00000 n 
+0000078035 00000 n 
+0000078163 00000 n 
+0000078290 00000 n 
+0000078419 00000 n 
+0000078552 00000 n 
+0000078654 00000 n 
+0000079003 00000 n 
+0000079089 00000 n 
+trailer
+<<
+/Size 41
+/Root 40 0 R
+/Info 39 0 R
+/ID [ <8EAFC4D04AFBDD8EEC65245F16A2A722> <8EAFC4D04AFBDD8EEC65245F16A2A722> ]
+>>
+startxref
+79193
+%%EOF

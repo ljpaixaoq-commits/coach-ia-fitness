@@ -1,129 +1,316 @@
-# 📖 Manual de Utilização: Coach IA Pessoal
+# Manual do Usuário - Coach IA Pessoal
 
-Guia completo e prático do **Coach IA Pessoal**, sua plataforma inteligente de alta performance que integra **Treino, Nutrição, Saúde Articular, Suplementação Personalizada e Gestão Familiar**.
-
----
-
-## 🌟 1. Funcionalidade Exclusiva: Resumo Inteligente do Dia
-
-Ao abrir o aplicativo, você receberá uma saudação contextualizada de acordo com o horário (**"Bom dia"**, **"Boa tarde"** ou **"Boa noite"**) e um resumo analítico preparado pelo Coach IA:
-
-- 😴 **Sono e Recuperação:** Avalia a quantidade de horas dormidas e a prontidão do sistema nervoso central.
-- 📉 **Balanço de Peso:** Indica a evolução semanal em gramas e a distância exata até sua meta final.
-- 🏋️ **Diretriz de Treino:** Apresenta a ficha do dia (ex: *Treino A - Peito, Tríceps & Ombro*) com recomendações de intensidade.
-- 🛡️ **Alerta Articular (Joelho Direito):** Recomenda exercícios isométricos de aquecimento e alerta sobre cargas.
-- 💧 **Meta de Hidratação:** Orienta a quantidade de água a ser ingerida ao longo dos períodos do dia.
-- 🧪 **Lembrete da Mistura Pré-Treino:** Lembra de tomar sua fórmula manipulada 30 minutos antes da musculação.
+Guia simples e direto para você usar o Coach IA no dia a dia.
 
 ---
 
-## 📱 2. Guia Detalhado das 11 Telas
+## Como acessar
 
-### 🏠 Tela 1 – Dashboard (Página Inicial)
-- **Saudação Dinâmica:** Adaptada em tempo real para o período do dia (*Bom dia, Boa tarde ou Boa noite*).
-- **Cartão de Peso e Meta:** Acompanhamento percentual com barra de progresso.
-- **Rastreador Rápido de Água:** Botões de toque rápido `+250ml` e `+500ml`.
-- **Painel de Calorias:** Total calórico e proteínas consumidas no dia vs meta estabelecida.
-- **Treino de Hoje:** Resumo dos exercícios do dia com botão *"Iniciar Treino"*.
+1. Acesse o aplicativo no navegador (link fornecido pelo administrador).
+2. Digite seu **CPF** e **senha**.
+3. Pronto, você será direcionado à tela inicial.
 
----
+> Se esqueceu sua senha, clique em "Esqueci minha senha", informe seu CPF e data de nascimento, e crie uma nova senha.
 
-### 🏋️ Tela 2 – Treinos, Séries & Progressão de Carga
-Esta tela foi estruturada com foco na melhor experiência de musculação:
-
-1. **Acompanhamento Série por Série:**
-   - Cada exercício exibe suas séries detalhadas (ex: *Série 1*, *Série 2*, *Série 3*, *Série 4*).
-   - Ao completar uma série, basta tocar no cartão da série para marcá-la como concluída.
-   - O cronômetro de descanso inicia automaticamente.
-   - Quando você concluir a última série, o exercício é finalizado com celebração visual de confetes!
-
-2. **Vídeo Demonstrativo de Execução:**
-   - Toque no botão **"Ver Vídeo"** em qualquer exercício para abrir o player com a execução biomecânica correta e instruções de postura.
-
-3. **Registro e Evolução de Cargas:**
-   - Para registrar uma progressão de peso, toque em **"📈 Registrar Evolução de Carga"**, insira a nova carga praticada (ex: `75 kg`) e clique em **Salvar**.
-   - A nova carga ficará gravada para ser utilizada automaticamente nos próximos treinos.
-
-4. **Exercícios de Cardio Baseados em Tempo:**
-   - Para esteira, bicicleta ergométrica ou escada, o sistema desativa repetições e ativa o modo de tempo em minutos (ex: *20 min de caminhada inclinada*).
-   - Você pode ajustar a duração e marcar a conclusão do cardio com um toque.
+![Tela de login - CPF e senha](docs/manual-prints/00-1-login-preenchido.png)
 
 ---
 
-### 🤖 Tela 3 – Coach IA (Assistente Virtual Inteligente)
-Converse com seu treinador virtual 24 horas por dia através de perguntas livres ou utilizando os atalhos rápidos:
+## Navegação
 
-- **"Hoje estou sem energia"** → A IA reduz o volume de treino em 20-30%, aumenta o descanso entre séries para 90-120s e orienta hidratação rápida.
-- **"Meu joelho está doendo"** → A IA consulta o histórico do seu joelho direito, bloqueia agachamentos pesados e prescreve cadeira extensora isométrica e flexora.
-- **"O treino foi muito pesado"** → A IA calcula o protocolo de supercompensação, eleva carboidratos/proteínas na próxima refeição e recomenda 8h de sono.
-- **"Dormi apenas 5 horas"** → A IA bloqueia tentativas de cargas máximas (PRs) e ativa o modo treino de segurança.
+O aplicativo tem dois modos de navegação:
 
----
+**No computador (desktop):**
+Um menu fixo aparece no lado esquerdo da tela com todas as abas listadas.
 
-### 📈 Tela 4 – Peso & Evolução Corporal
-- **Gráficos Interativos:** Curva temporal de peso e ganho de massa muscular.
-- **Métricas Corporais:** Cálculo de IMC, % de gordura e massa magra.
-- **Tabela de Circunferências:** Histórico de medidas de tórax, cintura, abdômen, braços e coxas.
-- **Botão "Registrar Nova Pesagem":** Permite atualizar seus dados corporais rapidamente.
+**No celular:**
+Na parte inferior aparecem 4 abas principais: **Início**, **Treino**, **Coach IA** e **Dieta**. Para acessar as demais abas, toque em **Mais** no canto inferior direito.
 
 ---
 
-### 🥗 Tela 5 – Alimentação & Hidratação
-- **Registro por Refeição:** Café da manhã, Almoço, Jantar, Lanches, Pré-treino e Pós-treino.
-- **Controle de Macronutrientes:** Totalizadores em tempo real de Proteínas (g), Carboidratos (g) e Gorduras (g).
-- **Rastreador de Água:** Barra de progresso com meta personalizada em mililitros.
+## Aba 1 - Dashboard (Início)
+
+**Para que serve:** É a tela que aparece quando você entra no aplicativo. Aqui você vê um resumo rápido de tudo que importa no seu dia.
+
+O que aparece na tela:
+
+**Saudação e resumo inteligente**
+Na parte superior, o Coach IA mostra uma mensagem personalizada de acordo com o horário ("Bom dia", "Boa tarde" ou "Boa noite") e um resumo do seu dia, incluindo qualidade do sono, tendência de peso, treino recomendado e lembretes de suplementos.
+
+Para ver o resumo completo, toque em "Ver Completo".
+
+**Cartões com seus dados do dia**
+- Peso atual e quanto falta para sua meta (toque para ir para a tela de Evolução)
+- Água bebida no dia, com botões rápidos de +250 ml e +500 ml
+- Calorias e proteínas consumidas (toque para ir para a tela de Alimentação)
+- Saúde articular (toque para ir para a tela de Saúde)
+
+**Treino de hoje**
+Na parte de baixo, aparece o treino do dia com todos os exercícios listados. Toque em "Iniciar Treino" para abrir a aba de Treinos e começar sua sessão.
+
+![Tela inicial - Dashboard](docs/manual-prints/01-dashboard.png)
 
 ---
 
-### 🧪 Tela 6 – Suplementos & Mistura Personalizada
-- **Área Exclusiva da sua Fórmula Manipulada:** Exibe a receita exata (*Creatina 5g + Beta-Alanina 3g + L-Citrulina 6g + Cafeína 200mg + Taurina 1g*).
-- **Estoque Inteligente:** Indica quantas doses restam e calcula para quantos dias o estoque é suficiente.
-- **Botão "Registrar Dose Ingerida":** Desconta 1 dose do estoque com um toque.
-- **Alerta de Reposição:** Notifica quando restarem menos de 7 doses para você encomendar nova receita.
-- **Vitaminas & Outros Suplementos:** Controle de Vitamina D3, Vitamina B12, Creatina, Whey e Omega 3.
+## Aba 2 - Treinos
+
+**Para que serve:** Aqui você registra cada exercício, cada série e acompanha sua evolução de carga treino a treino.
+
+**Como funciona a tela:**
+
+No topo, aparecem abas com seus treinos (Treino 1, Treino 2...). Toque em cada uma para trocar de treino.
+
+Abaixo, você vê um card grande com o nome do treino, a categoria (ex: Peito, Costas), duração estimada e quantos exercícios você já fez.
+
+**Registrando um treino:**
+
+1. Cada exercício aparece como um card separado.
+2. Dentro de cada exercício, aparecem as séries (Série 1, Série 2, Série 3...).
+3. Para marcar uma série como feita, toque nela. O cronômetro de descanso começa automaticamente.
+4. Quando todas as séries de um exercício estiverem feitas, aparece uma confete de celebração e o exercício é marcado como finalizado.
+5. No final do treino, toque em "Finalizar Treino" para salvar seus dados.
+
+**Alterando a carga de um exercício:**
+- Toque no ícone de lápis ao lado do peso. Digite o novo peso e salve.
+- Use "Aplicar em todas" para colocar o mesmo peso em todas as séries daquele exercício.
+
+**Exercício de cardio (esteira, bicicleta...):**
+- Em vez de repetições, aparece um modo de tempo.
+- Toque em "Iniciar" para começar a contar o tempo.
+- Quando terminar, toque em "Cardio Concluído".
+
+**Assistindo ao vídeo de um exercício:**
+- Toque em "Ver Vídeo" para ver como o exercício é feito. O vídeo abre em uma janela sobreposta.
+
+**Pedindo ajuste à IA:**
+- Se o treino estiver muito pesado ou você quiser trocar algum exercício, toque em "Pedir Ajuste à IA". Você será redirecionado ao Coach IA com uma mensagem pronta para enviar.
+
+![Aba Treinos - exercícios e séries](docs/manual-prints/01-workouts.png)
 
 ---
 
-### ❤️ Tela 7 – Saúde & Histórico do Joelho Direito
-- **Monitoramento Articular:**
-  - **Escala de Dor (0 a 10):** Deslize a barra para informar o nível de desconforto sentido hoje.
-  - **Exercícios Restritos:** Lista de movimentos que devem ser evitados para não sobrecarregar a articulação patelar.
-  - **Protocolo de Fortalecimento:** Lista de exercícios recomendados e seguros.
-  - **Cuidados Clínicos:** Registro de aplicação de gelo, mobilidade e fisioterapia.
-- **Sinais Vitais:** Pressão arterial sistólica/diastólica, glicemia em jejum e batimentos cardíacos.
+## Aba 3 - Coach IA
+
+**Para que serve:** É o seu assistente inteligente disponível 24 horas por dia. Você pode conversar livremente com ele, pedir para criar treinos ou ajustar o treino atual.
+
+**Tela inicial do Coach:**
+Quando você entra na aba, o Coach IA pergunta o que você deseja fazer. Três opções aparecem:
+
+- **Criar Treino:** Abre um passo a passo de 5 etapas onde você escolhe seus objetivos, limitações, dias da semana, duração e quantidade de treinos. No final, o Coach gera os treinos completos para você.
+- **Ajustar Treino:** Envia uma mensagem ao Coach dizendo o que quer mudar (ex: "trocar agachamento por leg press porque meu joelho está doendo").
+- **Melhorar Treino:** Envia uma mensagem ao Coach pedindo melhorias no treino atual.
+
+**Conversando com o Coach:**
+- Na parte de baixo da tela, há um campo de texto. Digite sua mensagem e toque em "Enviar".
+- O Coach responde na hora. Você pode fazer perguntas como:
+  - "Hoje estou sem energia"
+  - "Meu joelho está doendo"
+  - "O treino foi muito pesado"
+  - "Dormi apenas 5 horas"
+
+> O Coach IA leva em conta suas lesões, histórico e objetivos ao responder.
+
+![Coach IA - assistente virtual](docs/manual-prints/02-aicoach.png)
 
 ---
 
-### 📸 Tela 8 – Fotos de Evolução Física
-- **Ângulos de Comparação:** Frente, Lado e Costas.
-- **Comparador Visual Antes / Depois:** Compare fotos de datas distintas lado a lado para visualizar a evolução na definição muscular e redução de gordura.
+## Aba 4 - Alimentação (Dieta)
+
+**Para que serve:** Registar o que você comeu durante o dia e acompanhar se está batendo suas metas de calorias, proteínas, carboidratos e gorduras.
+
+**O que aparece na tela:**
+
+Na parte superior, quatro cartões mostram seus totais do dia: Calorias, Proteínas, Carboidratos e Gorduras. Cada um mostra quanto você já comeu vs. quanto era a meta.
+
+Abaixo, a barra de água com botões rápidos de +250 ml e +500 ml.
+
+Na parte de baixo, a lista de refeições que você já registrou no dia.
+
+**Registrando uma refeição:**
+1. Toque em "Registrar Refeição".
+2. Escolha o tipo (Café da Manhã, Almoço, Jantar, Lanche, Pré-Treino ou Pós-Treino).
+3. Digite um título para a refeição (ex: "Arroz com frango e salada").
+4. Informe as calorias, proteínas, carboidratos e gorduras (se souber).
+5. Salve.
+
+> Não sabe os valores nutricionais? Não tem problema. Coloque pelo menos o título e as calorias. Com o tempo você melhora esse registro.
+
+![Alimentação e Hidratação](docs/manual-prints/04-nutrition.png)
 
 ---
 
-### 🎯 Tela 9 – Metas & Hábitos
-- Metas de peso corporal, frequência de treinos por semana, ingestão de água, horas de sono e passos diários.
-- Barra de acompanhamento percentual com status em tempo real.
+## Aba 5 - Peso e Evolução
+
+**Para que serve:** Acompanhar sua evolução de peso, composição corporal e medidas ao longo do tempo.
+
+**O que aparece na tela:**
+
+Quatro cartões no topo mostram seu peso atual, IMC, percentual de gordura e massa muscular.
+
+Abaixo, um gráfico com duas linhas: uma mostrando a evolução do peso e outra da massa muscular ao longo dos dias.
+
+Mais abaixo, um histórico em tabela com todas as pesagens que você já registrou.
+
+**Registrando uma nova pesagem:**
+1. Toque em "Registrar Nova Pesagem".
+2. Informe o peso (obrigatório) e, se quiser, o percentual de gordura, massa muscular, cintura, braço e coxa.
+3. Salve. O IMC é calculado automaticamente.
+
+![Peso e Evolução - gráfico e histórico](docs/manual-prints/03-evolution.png)
 
 ---
 
-### 📅 Tela 10 – Calendário de Consistência
-- Calendário mensal com marcadores coloridos:
-  - 🔵 **Azul:** Treinos concluídos;
-  - 🟢 **Verde:** Pesagens registradas;
-  - 🟣 **Roxo:** Refeições 100% no plano;
-  - ⚫ **Cinza:** Dias de descanso programados.
+## Aba 6 - Suplementos
+
+**Para que serve:** Controlar seus suplementos, estoque e lembres de quando tomar.
+
+**O que aparece na tela:**
+
+Na parte superior, um card destacado com sua **Mistura Personalizada** (fórmula manipulada). Nele aparece:
+- A receita completa (ex: Creatina 5g + Beta-Alanina 3g + L-Citrulina 6g...)
+- O estoque atual em doses
+- Se o estoque está seguro ou baixo (avisos em verde ou vermelho)
+- Um botão "Registrar Dose Ingerida" para descontar uma dose
+
+Abaixo, uma grade com todos os outros suplementos (Vitaminas, Creatina, Whey, Omega 3...), cada um com seu estoque e botão "Tomar Dose".
+
+**Adicionando um novo suplemento:**
+1. Toque em "Novo Suplemento".
+2. Preencha o nome, dosagem, horário recomendado e estoque inicial.
+3. Se for uma mistura personalizada, marque a caixa "É a Mistura Personalizada exclusiva?".
+
+![Suplementos - mistura personalizada e estoque](docs/manual-prints/05-supplements.png)
 
 ---
 
-### 👥 Tela 11 – Perfil & Gestão Familiar
-- **Isolamento de Dados:** Cada pessoa da família (ex: Leonardo, Mariana) possui seu próprio perfil, metas, treinos e histórico clínico totalmente separados.
-- **Alternador de Perfil:** Alterne entre os perfis no topo da tela com apenas um toque.
-- **Cadastro de Novos Membros:** Adicione novos perfis com idade, altura, academia e horários personalizados.
+## Aba 7 - Saúde
+
+**Para que serve:** Monitorar dores, lesões (como o joelho direito) e sinais vitais.
+
+**O que aparece na tela:**
+
+Na parte superior, um card destacado com o monitoramento de lesão ativa (por exemplo, joelho direito). Nele aparece:
+- Um controle deslizante (barra) de 0 a 10 para você informar o nível de dor no dia
+- Lista de exercícios que você NÃO deve fazer (restrições)
+- Lista de exercícios seguros para fortalecer a região
+- Observações de tratamento
+
+Abaixo, cartões com sinais vitais: pressão arterial, glicemia e frequência cardíaca.
+
+**Registrando uma nova lesão ou dor:**
+1. Toque em "Registrar Lesão / Dor".
+2. Informe a parte do corpo, o nível de dor (com a barra deslizante), os sintomas e observações.
+3. Salve. A lesão será monitorada na tela.
+
+![Saúde - monitoramento de lesão e sinais vitais](docs/manual-prints/06-health.png)
 
 ---
 
-## 💡 Dicas de Uso no Dia a Dia
+## Aba 8 - Fotos Corporais
 
-1. **Abra o aplicativo pela manhã:** Confira o Resumo Inteligente do Dia para alinhar sua hidratação e horário de treino.
-2. **Durante o treino:** Marque cada série concluída e aproveite o cronômetro automático de descanso para manter a intensidade alta.
-3. **Evolução constante:** Sempre que aumentar a carga de um exercício, salve a nova marca para bater o recorde no próximo treino!
+**Para que serve:** Registrar fotos do seu corpo e comparar a evolução visual ao longo do tempo.
+
+**Como funciona:**
+
+No topo, três abas permitem escolher o ângulo: **Frente**, **Lado** ou **Costas**.
+
+Abaixo, um comparador lado a lado mostra a foto inicial (Antes) e a foto atual (Depois), com datas e pesos.
+
+Na parte de baixo, a galeria com todas as fotos registradas naquele ângulo.
+
+**Registrando uma nova foto:**
+1. Toque em "Nova Foto".
+2. Cole o endereço (URL) da imagem, informe o peso daquele dia e, se quiser, uma observação.
+3. Salve.
+
+**Comparando fotos:**
+- Toque em qualquer foto da galeria para defini-la como foto de comparação (Depois).
+
+![Fotos Corporais - comparador antes e depois](docs/manual-prints/07-photos.png)
+
+---
+
+## Aba 9 - Metas
+
+**Para que serve:** Criar e acompanhar metas pessoais como peso, frequência de treinos, água, sono e passos.
+
+**O que aparece na tela:**
+
+Uma grade de cartões, cada um com uma meta. Cada cartão mostra:
+- O nome da meta
+- O valor atual vs. a meta
+- Uma barra de progresso com a porcentagem concluída
+- Prazo (se definido)
+
+**Criando uma nova meta:**
+1. Toque em "Nova Meta".
+2. Preencha o título, escolha a categoria (Peso, Treinos/Semana, Água, Sono, Passos ou Nutrição), informe a unidade, o valor atual e o valor-alvo.
+3. Salve.
+
+![Metas - cartão de progresso](docs/manual-prints/08-goals.png)
+
+---
+
+## Aba 10 - Calendário
+
+**Para que serve:** Visualizar em um calendário mensal seus treinos, pesagens e dias de adherence à dieta.
+
+**O que aparece:**
+
+Um calendário do mês com pontos coloridos:
+- **Azul:** Treino concluído naquele dia
+- **Verde:** Pesagem registrada
+- **Roxo:** Dieta 100% no plano
+
+O dia atual aparece destacado com o rótulo "HOJE".
+
+> Esta tela é apenas visual. Os dados são registrados automaticamente quando você registra treinos, pesagens e refeições nas outras abas.
+
+![Calendário de Consistência](docs/manual-prints/09-calendar.png)
+
+---
+
+## Aba 11 - Perfil
+
+**Para que serve:** Gerenciar seus dados pessoais e metas individuais de treino, alimentação e saúde.
+
+**O que aparece na tela:**
+
+As configurações do seu perfil: nome, apelido, e-mail, telefone, idade, altura, peso, academia, horário habitual de treino e meta diária de água.
+
+**Editar perfil (autonomia total):**
+1. Toque em **Editar** no topo da aba.
+2. Altere os campos desejados (nome, apelido, e-mail, telefone, idade, altura, peso atual/objetivo, academia, horário habitual, meta de água).
+3. Toque em **Salvar Alterações**. As mudanças passam a valer imediatamente nos seus próximos cálculos e são sincronizadas com o Supabase.
+
+> Cada pessoa utiliza o app com seu **próprio login** (CPF + senha). Não é necessário criar membros dentro do app.
+
+![Perfil](docs/manual-prints/10-profile.png)
+
+---
+
+## Resumo rápido por aba
+
+| Aba | O que você faz |
+|-----|----------------|
+| Dashboard | Vê o resumo do dia e começa o treino |
+| Treinos | Registra exercícios, séries e cargas |
+| Coach IA | Conversa com o assistente e pede ajustes |
+| Alimentação | Registra refeições e água |
+| Peso e Evolução | Registra pesagem e vê o gráfico |
+| Suplementos | Registra doses e controla estoque |
+| Saúde | Registra dores e acompanha lesões |
+| Fotos Corporais | Compara fotos antes e depois |
+| Metas | Cria e acompanha metas pessoais |
+| Calendário | Vê os dias de consistência no mês |
+| Perfil | Edita seus dados pessoais, metas e preferências |
+
+---
+
+## Dicas para o dia a dia
+
+1. **Abra o app pela manhã** e confira o resumo inteligente para alinhar seu dia.
+2. **Durante o treino**, marque cada série no app. O cronômetro de descanso cuida do tempo.
+3. **Registre suas refeições** ao longo do dia para acompanhar as calorias e proteínas.
+4. **Registre sua pesagem** uma vez por semana no mesmo dia e horário.
+5. **Se algo não está funcionando**, converse com o Coach IA. Ele conhece seu histórico e pode ajustar tudo para você.

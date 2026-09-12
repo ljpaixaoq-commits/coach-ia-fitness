@@ -10,6 +10,8 @@ interface AuthViewProps {
     cpf: string;
     birthDate: string;
     gender?: string;
+    nickname?: string;
+    avatarUrl?: string;
   }, password: string) => Promise<void>;
   onResetPassword: (cpf: string, birthDate: string, newPassword: string) => Promise<void>;
   onValidateReset?: (cpf: string, birthDate: string) => Promise<{ account_id: string; profile_name: string }>;
@@ -33,6 +35,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [email, setEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [success, setSuccess] = useState<string | null>(null);
@@ -66,10 +70,10 @@ export const AuthView: React.FC<AuthViewProps> = ({
       }
       setPending(true);
       try {
-        await onRegister({ name, email, cpf: username, birthDate }, password);
+        await onRegister({ name, email, cpf: username, birthDate, nickname, avatarUrl }, password);
         setSuccess('Cadastro realizado! Sua conta será analisada pelo administrador e ativada em breve.');
         setMode('login');
-        setPassword(''); setConfirmPassword(''); setName(''); setEmail(''); setBirthDate(''); setUsername('');
+        setPassword(''); setConfirmPassword(''); setName(''); setNickname(''); setAvatarUrl(''); setEmail(''); setBirthDate(''); setUsername('');
       } catch (err) {
         // error already set in store
       } finally {
@@ -118,6 +122,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setSuccess(null);
     setPassword('');
     setConfirmPassword('');
+    setName('');
+    setNickname('');
+    setAvatarUrl('');
+    setEmail('');
+    setBirthDate('');
+    setUsername('');
     setResetStep('identity');
     setResetAccountId(null);
     setResetUserName('');
@@ -194,6 +204,21 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nome completo"
+                />
+                <input
+                  className={inputClass}
+                  type="text"
+                  required
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Apelido (como quer ser chamado)"
+                />
+                <input
+                  className={inputClass}
+                  type="text"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder="URL do avatar (opcional)"
                 />
                 <input
                   className={inputClass}

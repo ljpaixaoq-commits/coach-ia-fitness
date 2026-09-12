@@ -11,7 +11,7 @@ import {
   Camera,
   Target,
   CalendarDays,
-  Users,
+  User,
   ShieldCheck
 } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, isAdmi
     { id: 'photos', label: 'Fotos Corporais', icon: Camera, badge: null },
     { id: 'goals', label: 'Metas', icon: Target, badge: null },
     { id: 'calendar', label: 'Calendário', icon: CalendarDays, badge: null },
-    { id: 'profile', label: 'Perfil & Família', icon: Users, badge: null }
+    { id: 'profile', label: 'Perfil', icon: User, badge: null }
   ];
 
   if (isAdmin) {

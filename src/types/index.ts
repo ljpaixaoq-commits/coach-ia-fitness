@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'member' | 'spouse';
+export type UserRole = 'admin' | 'member';
 export type Gender = 'male' | 'female' | 'other';
 export type ActivityLevel = 'sedentary' | 'moderate' | 'intense' | 'athlete';
 export type FitnessGoal = 'lose_weight' | 'hypertrophy' | 'endurance' | 'health';
@@ -23,6 +23,7 @@ export interface Profile {
   name: string;
   nickname?: string;
   email?: string;
+  phone?: string;
   cpf?: string;
   birth_date?: string;
   avatar_url?: string;

@@ -25,29 +25,6 @@ export const INITIAL_PROFILES: Profile[] = [
     daily_protein_target_g: 170,
     daily_carb_target_g: 190,
     daily_fat_target_g: 55
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222222',
-    name: 'Mariana',
-    nickname: 'Mari',
-    email: 'mariana@example.com',
-    role: 'spouse',
-    gender: 'female',
-    age: 30,
-    height: 165,
-    current_weight: 62.0,
-    target_weight: 58.0,
-    body_fat_percentage: 24.5,
-    muscle_mass_kg: 41.2,
-    activity_level: 'moderate',
-    fitness_goal: 'hypertrophy',
-    gym_name: 'Smart Fit Centro',
-    preferred_training_time: '18:30',
-    daily_water_target_ml: 2500,
-    daily_calorie_target: 1800,
-    daily_protein_target_g: 120,
-    daily_carb_target_g: 180,
-    daily_fat_target_g: 45
   }
 ];
 

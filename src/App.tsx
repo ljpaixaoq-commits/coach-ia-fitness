@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAppStore, NavTab } from './store/useAppStore';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
@@ -17,7 +17,7 @@ import { HealthView } from './views/HealthView';
 import { PhotosView } from './views/PhotosView';
 import { GoalsView } from './views/GoalsView';
 import { CalendarView } from './views/CalendarView';
-import { ProfileFamilyView } from './views/ProfileFamilyView';
+import { ProfileView } from './views/ProfileView';
 import { AuthView } from './views/AuthView';
 import { AdminUsersView } from './views/AdminUsersView';
 
@@ -28,7 +28,7 @@ import {
   Camera,
   Target,
   CalendarDays,
-  Users,
+  User,
   ShieldCheck,
   X
 } from 'lucide-react';
@@ -71,13 +71,11 @@ export function App() {
       {/* 1. Header */}
       <Header
         activeProfile={store.activeProfile}
-        profiles={store.profiles}
-        onSwitchProfile={store.switchProfile}
         activeTab={store.activeTab}
         onOpenSmartSummary={() => setIsSmartSummaryModalOpen(true)}
         theme={store.theme}
         onToggleTheme={store.toggleTheme}
-        currentUserName={store.currentUser?.profile_id ? store.activeProfile.name : undefined}
+        currentUserName={store.activeProfile.name}
         isAdmin={store.currentUser?.role === 'admin'}
         onLogout={store.logout}
       />
@@ -204,13 +202,7 @@ export function App() {
           )}
 
           {store.activeTab === 'profile' && (
-            <ProfileFamilyView
-              profiles={store.profiles}
-              activeProfile={store.activeProfile}
-              onSwitchProfile={store.switchProfile}
-              onAddProfile={store.addProfile}
-              onUpdateProfile={store.updateProfile}
-            />
+            <ProfileView activeProfile={store.activeProfile} onUpdate={store.updateProfile} />
           )}
 
           {store.activeTab === 'admin' && store.currentUser?.role === 'admin' && (
@@ -241,7 +233,7 @@ export function App() {
         <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col justify-end">
           <div className="bg-surface-card border-t border-line rounded-t-3xl p-6 space-y-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-line">
-              <h3 className="text-base font-bold text-content-primary">Todos os Módulos</h3>
+              <h3 className="text-base font-bold text-content-primary">Todos os MÃ³dulos</h3>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1.5 rounded-lg bg-dark-800 text-slate-400"
@@ -256,7 +248,7 @@ export function App() {
                 className="p-3 rounded-xl bg-dark-850 border border-line flex items-center space-x-2 text-content-secondary"
               >
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span>Peso & Evolução</span>
+                <span>Peso & EvoluÃ§Ã£o</span>
               </button>
 
               <button
@@ -272,7 +264,7 @@ export function App() {
                 className="p-3 rounded-xl bg-dark-850 border border-line flex items-center space-x-2 text-content-secondary"
               >
                 <HeartPulse className="w-4 h-4 text-rose-400" />
-                <span>Saúde</span>
+                <span>SaÃºde</span>
               </button>
 
               <button
@@ -288,7 +280,7 @@ export function App() {
                 className="p-3 rounded-xl bg-dark-850 border border-line flex items-center space-x-2 text-content-secondary"
               >
                 <Target className="w-4 h-4 text-blue-400" />
-                <span>Metas & Hábitos</span>
+                <span>Metas & HÃ¡bitos</span>
               </button>
 
               <button
@@ -296,15 +288,15 @@ export function App() {
                 className="p-3 rounded-xl bg-dark-850 border border-line flex items-center space-x-2 text-content-secondary"
               >
                 <CalendarDays className="w-4 h-4 text-indigo-400" />
-                <span>Calendário</span>
+                <span>CalendÃ¡rio</span>
               </button>
 
               <button
                 onClick={() => { store.setActiveTab('profile'); setIsMobileMenuOpen(false); }}
                 className="col-span-2 p-3 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center space-x-2 text-blue-400 font-bold"
               >
-                <Users className="w-4 h-4" />
-                <span>Perfil & Gestão Familiar</span>
+                <User className="w-4 h-4" />
+                <span>Perfil</span>
               </button>
 
               {store.currentUser?.role === 'admin' && (
@@ -313,7 +305,7 @@ export function App() {
                   className="col-span-2 p-3 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center space-x-2 text-amber-400 font-bold"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Administração de Usuários</span>
+                  <span>AdministraÃ§Ã£o de UsuÃ¡rios</span>
                 </button>
               )}
             </div>
