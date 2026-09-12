@@ -99,7 +99,17 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const [historyTo, setHistoryTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const chatMessages = messages.slice(-30);
+  const isAdjustMode = mode === 'adjust';
+  const chatMessages = isAdjustMode
+    ? (() => {
+        const userMsgs = messages.filter(m => m.sender === 'user');
+        const aiMsgs = messages.filter(m => m.sender === 'ai');
+        const pair = [];
+        if (userMsgs.length > 0) pair.push(userMsgs[userMsgs.length - 1]);
+        if (aiMsgs.length > 0) pair.push(aiMsgs[aiMsgs.length - 1]);
+        return pair.sort((a, b) => a.created_at.localeCompare(b.created_at));
+      })()
+    : messages.slice(-30);
 
   const goHistory = () => {
     setHistoryTab(null);
