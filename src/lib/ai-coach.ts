@@ -21,7 +21,7 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
 
 export interface AICoachResponse {
   message: string;
-  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust';
+  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust' | 'workout_improve';
   suggestedActions?: {
     action: string;
     label: string;
@@ -147,18 +147,42 @@ export function processAICoachPrompt(
     };
   }
 
+  // ── Melhorar o treino (evoluir nível / variar exercícios) ───
+  const wantsImproveLevel = /melhorar (?:meu |o |o meu |o meu|esse |este |esse |este )?treino|evoluir (?:meu |o |o meu |no |no meu |o meu |este |este )?treino|melhorar (?:na |no |na )?prog|carga|progresso|desenvolv(?:er|imento) o treino|subir de n[ií]vel|subir o n[ií]vel|mudar de n[ií]vel|aumentar o n[ií]vel|treino f[áa]cil|treino leve demais|treino muito leve|enjoar|enjoei|cansad[oa] (?:do |desse |deste )?treino|repetitiv|variar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|mudar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|trocar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|rotacionar exerc|diferente treino|novo treino|mudar o treino|mesmo exerc|ta[oã]o repetitiv/.test(lower);
+  if (wantsImproveLevel) {
+    const wDiff = todayWorkout?.difficulty;
+    const diffFromDifficulty = (d: string | undefined): 'iniciante' | 'intermediary' | 'avancado' =>
+      d === 'iniciante' ? 'iniciante' : d === 'intermediary' ? 'intermediary' : 'avancado';
+    const curKey = diffFromDifficulty(wDiff);
+    const nextKey = curKey === 'iniciante' ? 'intermediate' : curKey === 'intermediary' ? 'advanced' : null;
+    const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
+    const nextLabel = nextKey ? DIFF_NAMES[nextKey] : '';
+    const improvements: string[] = [];
+    if (nextKey) improvements.push(`📈 **Subir o nível** de **${curLabel}** para **${nextLabel}** (mais séries, cargas maiores e descanso menor)`);
+    improvements.push('🔄 **Variar exercícios** — troco os repetitivos por variações do **mesmo grupo muscular**');
+    const improveActions: AICoachResponse['suggestedActions'] = [];
+    if (nextKey) improveActions.push({ action: 'advance_experience', label: `📈 Subir para ${nextLabel}`, details: `Aumento a dificuldade do treino: mais séries, cargas maiores e descanso menor.` });
+    improveActions.push({ action: 'rotate_exercises', label: '🔄 Variar exercícios', details: 'Troco exercícios repetitivos por variações do mesmo grupo muscular, mantendo o grupo trabalhado.' });
+    return {
+      intent: 'workout_improve',
+      message: `${greeting} Antes de mexer no seu treino, aqui está **em resumo** o que pretendo ajustar:\n\n${improvements.join('\n')}\n\n**Nada é aplicado sem a sua confirmação.** Quer que eu **aplique**? 💪`,
+      suggestedActions: improveActions
+    };
+  }
+
   // ── Dúvidas de progressão de cargas ─────────────────────────
   const wantsProgression = /progress|progredir|evoluir|carga\b|peso\b|subir carga|subir peso|levantar mais|quanto pesar/.test(lower);
   if (wantsProgression) {
     return {
       intent: 'progression_advice',
-      message: `${greeting} Sobre **progressão de cargas**, aqui vai minha orientação:\n\n1. **Aumente aos poucos:** suba 2,5–5 kg (ou ~5%) apenas quando concluir todas as séries com técnica limpa;\n2. **Reserve 1–2 repetições (RIR):** não treine até a falha em todas as séries;\n3. **Anote os pesos:** registre na aba Treinos para acompanhar a evolução;\n4. **Alimentação:** para ter energia para progredir, mantenha a meta de **${profile.daily_protein_target_g}g de proteína** e **${profile.daily_calorie_target} kcal**.\n\nSe quiser, abro seu treino de hoje para conferir os pesos atuais.`,
+      message: `${greeting} Sobre **progressão de cargas**, aqui vai minha orientação:\n\n1. **Aumente aos poucos:** suba 2,5–5 kg (ou ~5%) apenas quando conseguir terminar todas as séries com boa execução.\n2. **Prossiga em etapas:** faça 2–3 treinos com o mesmo peso antes de subir.\n3. **Ouça o corpo:** se a dor ultrapassar leve desconforto, adie a progressão.\n\n**Quer que eu aplique um novo nível de cargas para hoje?**`,
       suggestedActions: [
-        { action: 'start_workout', label: '🏋️ Abrir treino de hoje', details: 'Ver cargas atuais e ajustar.' },
+        { action: 'start_workout', label: '🏋️ Abrir treino de hoje', details: 'Ver cargas atuais e ajustar na hora.' },
         { action: 'view_nutrition', label: '🥗 Ver metas de alimentação', details: 'Conferir calorias e proteínas do plano.' }
       ]
     };
   }
+
 
   // ── Intent genérico de ajustar o treino ─────────────────────
   const wantsAdjust = /\bajustar\b|\bajuste\b|adaptar|adapta|modificar o treino|revisar treino/.test(lower);

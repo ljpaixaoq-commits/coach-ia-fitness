@@ -264,7 +264,7 @@ export interface AICoachMessage {
   profile_id: string;
   sender: 'user' | 'ai';
   message: string;
-  intent_type?: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust';
+  intent_type?: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust' | 'workout_improve';
   suggested_actions?: SuggestedAction[];
   flow?: CoachFlow;
   created_at: string;

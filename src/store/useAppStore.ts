@@ -1074,6 +1074,69 @@ export function useAppStore() {
         return;
       }
 
+      case 'advance_experience': {
+        const workout = targetWorkout;
+        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+          coachReply('⚠️ Não encontrei exercícios para subir o nível.');
+          return;
+        }
+        const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
+        const curDiff = workout.difficulty || 'iniciante';
+        const nextDiff = curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado';
+        const updated = workout.exercises.map(e => ({
+          ...e,
+          default_weight_kg: Math.round((e.default_weight_kg || 0) * 1.1),
+          rest_time_seconds: Math.max(45, Math.min(150, Math.round((e.rest_time_seconds || 60) * 0.85))),
+          sets_data: (e.sets_data || []).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
+        }));
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, difficulty: nextDiff, exercises: updated } : w));
+        await Promise.all(updated.map(e => syncWorkoutExercise(e)));
+        coachReply(`📈 **Nível do treino aumentado!**\n\n- **${diffLabels[curDiff] || 'Iniciante'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
+        return;
+      }
+
+      case 'rotate_exercises': {
+        const workout = targetWorkout;
+        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+          coachReply('⚠️ Não encontrei exercícios para variar.');
+          return;
+        }
+        const currentNames = workout.exercises.map(e => e.name);
+        const toRotate = workout.exercises.slice(0, Math.min(2, workout.exercises.length));
+        const updated = [...workout.exercises];
+        const rotated: WorkoutExercise[] = [];
+        const removedIds: string[] = [];
+        let changed = 0;
+        for (const ex of toRotate) {
+          const substitute = suggestSubstituteExercise(ex.muscle_group, currentNames, workout.id);
+          if (substitute) {
+            const sub: WorkoutExercise = {
+              ...substitute,
+              id: `ex-ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              workout_id: workout.id,
+              order_index: ex.order_index,
+              default_weight_kg: ex.default_weight_kg || substitute.default_weight_kg,
+              rest_time_seconds: ex.rest_time_seconds || substitute.rest_time_seconds,
+              sets_data: (ex.sets_data || []).map(s => ({ ...s }))
+            };
+            const idx = updated.findIndex(u => u.id === ex.id);
+            if (idx !== -1) updated[idx] = sub;
+            removedIds.push(ex.id);
+            rotated.push(sub);
+            changed++;
+          }
+        }
+        if (changed === 0) {
+          coachReply('ℹ️ Não achei variações novas para esses exercícios agora.');
+          return;
+        }
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, exercises: updated } : w));
+        await Promise.all(removedIds.map(id => deleteWorkoutExercise(id)));
+        await Promise.all(rotated.map(e => syncWorkoutExercise(e)));
+        coachReply(`🔄 **Exercícios variados!**\n\n- Trocados por variações do **mesmo grupo muscular**:\n${rotated.map(e => `  - **${e.name}**`).join('\n')}\n\nQuebrando a rotina para dar novos estímulos! ��`);
+        return;
+      }
+
       case 'apply_review': {
         const workout = targetWorkout;
         if (!workout || !workout.exercises || workout.exercises.length === 0) {
