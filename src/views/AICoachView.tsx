@@ -88,6 +88,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const [inputText, setInputText] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [adjustBaseCount, setAdjustBaseCount] = useState<number | null>(null);
+  const [improveBaseCount, setImproveBaseCount] = useState<number | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // History flow
@@ -103,7 +104,9 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   const isAdjustMode = mode === 'adjust';
   const chatMessages = isAdjustMode
     ? (adjustBaseCount !== null ? messages.slice(adjustBaseCount) : messages.slice(-2))
-    : messages.slice(-30);
+    : mode === 'improve'
+      ? (improveBaseCount !== null ? messages.slice(improveBaseCount) : messages.slice(-2))
+      : messages.slice(-30);
 
   const goHistory = () => {
     setHistoryTab(null);
@@ -226,6 +229,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
   };
 
   const startImprove = () => {
+    setImproveBaseCount(messages.length);
     setMode('improve');
     setPendingPrompt('Quero melhorar meu treino. Como posso evoluir na progressão de cargas?');
   };
