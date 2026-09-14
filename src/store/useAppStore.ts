@@ -125,6 +125,24 @@ function reconcileWorkoutLevel(w: Workout): Workout {
   return { ...w, title: relabeled.title, notes: relabeled.notes };
 }
 
+function dedupeWorkoutExercises(w: Workout): { workout: Workout; removed: string[] } {
+  if (!w.exercises || w.exercises.length === 0) return { workout: w, removed: [] };
+  const seen = new Set<string>();
+  const removed: string[] = [];
+  const exercises: WorkoutExercise[] = [];
+  for (const ex of w.exercises) {
+    const key = (ex.name || '').toLowerCase().trim();
+    if (seen.has(key)) {
+      if (ex.id) removed.push(ex.id);
+      continue;
+    }
+    seen.add(key);
+    exercises.push(ex);
+  }
+  if (removed.length === 0) return { workout: w, removed };
+  return { workout: { ...w, exercises }, removed };
+}
+
 function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: number): ExerciseSet[] {
   const out: ExerciseSet[] = (data || []).filter(s => s.set_number <= count);
   if (out.length === 0) {
@@ -489,8 +507,10 @@ export function useAppStore() {
     setProfiles(data.profiles);
     setWorkouts(data.workouts.map(w => {
       const reconciled = reconcileWorkoutLevel(w);
-      const workout = { ...reconciled, exercises: reconciled.exercises?.map(enrichExerciseFromTemplate) };
-      if (reconciled !== w) syncWorkout(workout).catch(() => undefined);
+      const deduped = dedupeWorkoutExercises(reconciled);
+      const workout = { ...deduped.workout, exercises: deduped.workout.exercises?.map(enrichExerciseFromTemplate) };
+      if (reconciled !== w || deduped.removed.length > 0) syncWorkout(workout).catch(() => undefined);
+      if (deduped.removed.length > 0) deduped.removed.forEach(id => deleteWorkoutExercise(id).catch(() => undefined));
       return workout;
     }));
     setWorkoutLogs(data.workoutLogs || []);
@@ -1254,11 +1274,18 @@ export function useAppStore() {
     for (const idx of variations) {
       const result = idx === 0 ? generateWorkout(goal, activeProfile) : generateVariation(goal, activeProfile, idx);
       const workoutId = `wkt-ai-${Date.now()}-${idx}`;
+      const seen = new Set<string>();
+      const uniqueExercises = (result.exercises || []).filter(ex => {
+        const key = ex.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       const newWorkout: Workout = {
         ...result.workout,
         id: workoutId,
         profile_id: activeProfile.id,
-        exercises: result.exercises.map(ex => ({ ...ex, workout_id: workoutId }))
+        exercises: uniqueExercises.map(ex => ({ ...ex, workout_id: workoutId }))
       };
 
       setWorkouts(prev => [newWorkout, ...prev]);

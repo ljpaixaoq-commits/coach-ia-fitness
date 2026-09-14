@@ -500,11 +500,13 @@ function buildExercises(groups: string[], limitations: string[], experience: 'be
   const setsMultiplier = experience === 'beginner' ? 0.75 : experience === 'advanced' ? 1.25 : 1;
 
   const exercises: WorkoutExercise[] = [];
+  const usedNames = new Set<string>();
   let order = 0;
 
   for (const group of groups) {
     const pool = EXERCISE_DB[group] || [];
     const filtered = pool.filter(ex => {
+      if (usedNames.has(ex.name.toLowerCase())) return false;
       if (hasKneeIssue && !ex.kneeSafe) return false;
       if (hasBackIssue && (ex.name.includes('Curvada') || ex.name.includes('Remada Curvada'))) return false;
       return true;
@@ -514,6 +516,7 @@ function buildExercises(groups: string[], limitations: string[], experience: 'be
     const selected = filtered.slice(0, count);
 
     for (const ex of selected) {
+      usedNames.add(ex.name.toLowerCase());
       exercises.push(mapTemplateToExercise(ex, setsMultiplier, order++));
     }
   }
@@ -540,11 +543,13 @@ function buildExercisesShuffled(groups: string[], limitations: string[], experie
   const setsMultiplier = experience === 'beginner' ? 0.75 : experience === 'advanced' ? 1.25 : 1;
 
   const exercises: WorkoutExercise[] = [];
+  const usedNames = new Set<string>();
   let order = 0;
 
   for (const group of groups) {
     const pool = EXERCISE_DB[group] || [];
     const filtered = pool.filter(ex => {
+      if (usedNames.has(ex.name.toLowerCase())) return false;
       if (hasKneeIssue && !ex.kneeSafe) return false;
       if (hasBackIssue && (ex.name.includes('Curvada') || ex.name.includes('Remada Curvada'))) return false;
       return true;
@@ -555,6 +560,7 @@ function buildExercisesShuffled(groups: string[], limitations: string[], experie
     const selected = shuffled.slice(0, count);
 
     for (const ex of selected) {
+      usedNames.add(ex.name.toLowerCase());
       exercises.push(mapTemplateToExercise(ex, setsMultiplier, order++));
     }
   }
