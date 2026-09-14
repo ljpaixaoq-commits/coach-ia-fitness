@@ -341,7 +341,7 @@ export const AICoachView: React.FC<AICoachViewProps> = ({
               <TrendingUp className="w-5 h-5 text-emerald-400" />
             </div>
             <h3 className="text-sm font-bold text-white mb-1">Melhorar Treino</h3>
-            <p className="text-xs text-slate-400">Evoluir na progressão de cargas e intensidade.</p>
+            <p className="text-xs text-slate-400">Evoluir o treino — ou reduzir o nível quando estiver cansado(a).</p>
             <div className="mt-3 flex items-center text-emerald-400 text-xs font-bold">
               Melhorar desempenho <ChevronRight className="w-3.5 h-3.5 ml-1" />
             </div>

@@ -1090,8 +1090,35 @@ export function useAppStore() {
           sets_data: (e.sets_data || []).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
         }));
         setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, difficulty: nextDiff, exercises: updated } : w));
+        await syncWorkout({ ...workout, difficulty: nextDiff, exercises: updated });
         await Promise.all(updated.map(e => syncWorkoutExercise(e)));
         coachReply(`📈 **Nível do treino aumentado!**\n\n- **${diffLabels[curDiff] || 'Iniciante'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
+        return;
+      }
+
+      case 'regress_experience': {
+        const workout = targetWorkout;
+        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+          coachReply('⚠️ Não encontrei exercícios para reduzir o nível.');
+          return;
+        }
+        const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
+        const curDiff = workout.difficulty || 'avancado';
+        const nextDiff = curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante';
+        const updated = workout.exercises.map(e => {
+          const sets = Math.max(1, (e.sets || 1) >= 3 ? (e.sets || 1) - 1 : (e.sets || 1));
+          return {
+            ...e,
+            sets,
+            sets_data: (e.sets_data || []).filter(s => s.set_number <= sets),
+            default_weight_kg: Math.max(0, Math.round((e.default_weight_kg || 0) * 0.9)),
+            rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
+          };
+        });
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, difficulty: nextDiff, exercises: updated } : w));
+        await syncWorkout({ ...workout, difficulty: nextDiff, exercises: updated });
+        await Promise.all(updated.map(e => syncWorkoutExercise(e)));
+        coachReply(`📉 **Nível do treino reduzido!**\n\n- **${diffLabels[curDiff] || 'Avançado'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **-10%**\n- Descanso aumentado\n- Volume (séries) reduzido\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
         return;
       }
 

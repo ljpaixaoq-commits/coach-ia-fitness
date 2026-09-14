@@ -21,7 +21,7 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
 
 export interface AICoachResponse {
   message: string;
-  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust' | 'workout_improve';
+  intent: 'energy_low' | 'injury_pain' | 'workout_too_heavy' | 'low_sleep' | 'nutrition_advice' | 'general' | 'remove_exercise' | 'remove_exercise_not_found' | 'review_fatigue' | 'review_pain' | 'progression_advice' | 'workout_adjust' | 'workout_improve' | 'workout_regress';
   suggestedActions?: {
     action: string;
     label: string;
@@ -131,6 +131,32 @@ export function processAICoachPrompt(
     };
   }
 
+  // ── Melhorar treino: regressão (aliviar nível/intensidade) ──
+  const wantsRegress = /descer de n[ií]vel|baixar (?:o |meu )?n[ií]vel|abaixar o n[ií]vel|reduzir o n[ií]vel|diminuir o n[ií]vel|reduzir (?:as |as minhas )?cargas|diminuir as cargas|baixar as cargas|abaixar as cargas|baixar a intensidade|abaixar a intensidade|reduzir a intensidade|diminuir a intensidade|menos intensidade|aliviar (?:o |meu |o meu )?treino|treino (?:mais |bem mais )?leve|(?:cansad[oa]|exausto|exausta|fatigad[oa]|esgotad[oa]|derrubad[oa])(?: do | da | desse | deste | do meu | da minha | com o | com o meu | com esse | com esta | com essa | com esse meu )?(?:treino|ficha)|treino (?:[ée] |est[áa] |esta |ficou |fica |t[aá] )?(?:muito |bem |demais |bastante |tao |t[aã]o )?(?:pesado|puxado|dif[ií]cil|intenso|forte)|muito (?:pesado|puxado|dif[ií]cil|intenso|forte)(?: pra | para | pro | para o | para mim )?(?:o |esse |este |meu |o meu )?(?:treino|treinar)|n[ãa]o (?:aguento|suporto) (?:mais )?(?:o |esse |este |meu )?treino|dar um passo atr[áa]s|regredir|regress|voltar (?:para |pro |para o |ao |ao n[ií]vel |para o n[ií]vel )(?:intermedi|iniciante|inic)/.test(lower);
+  if (wantsRegress) {
+    const diffFromDifficulty = (d: string | undefined): 'iniciante' | 'intermediary' | 'avancado' =>
+      d === 'iniciante' ? 'iniciante' : d === 'intermediary' ? 'intermediary' : 'avancado';
+    const curKey = diffFromDifficulty(todayWorkout?.difficulty);
+    const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
+    const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
+    const prevLabel = prevKey ? DIFF_NAMES[prevKey] : '';
+    const regressActions: AICoachResponse['suggestedActions'] = [
+      { action: 'apply_review', label: '📋 Modo leve (cargas -20%)', details: 'Mantém o nível atual e reduz as cargas para aliviar o dia.', workoutId: todayWorkout?.id }
+    ];
+    if (prevKey) {
+      regressActions.unshift({ action: 'regress_experience', label: `📉 Descer para ${prevLabel}`, details: 'Reduz a dificuldade do treino: menos séries, cargas menores e descanso maior.' });
+    }
+    regressActions.push({ action: 'rotate_exercises', label: '🔄 Variar exercícios', details: 'Troco exercícios repetitivos por variações do mesmo grupo muscular.' });
+    const plan = prevKey
+      ? `📉 **Descer o nível** de **${curLabel}** para **${prevLabel}** (menos séries, cargas **-10%** e descanso maior)`
+      : `📋 Você já está no nível **${curLabel}** — o menor disponível. Aplico o **modo leve:** cargas **-20%** e descanso maior`;
+    return {
+      intent: 'workout_regress',
+      message: `${greeting} Você quer **aliviar o treino** — e sem mexer exercício por exercício, certo? Aqui está **em resumo** o que pretendo ajustar:\n\n${plan}\n\n**Nada é aplicado sem a sua confirmação.** Quer que eu **aplique**? 💪`,
+      suggestedActions: regressActions
+    };
+  }
+
   // ── Ajuste: muito cansado(a) ou muitas dores → revisar treino ──
   const veryTired = /muito cansad|muitíssimo cansad|cansad(í|i)ssimo|exausto|exausta|sem forças|sem forcas|derrubad/.test(lower);
   const lotsOfPain = /muitas dores|muita dor|muito dolorid|dores fortes|dor forte|dor intensa/.test(lower);
@@ -148,7 +174,7 @@ export function processAICoachPrompt(
   }
 
   // ── Melhorar o treino (evoluir nível / variar exercícios) ───
-  const wantsImproveLevel = /melhorar (?:meu |o |o meu |o meu|esse |este |esse |este )?treino|evoluir (?:meu |o |o meu |no |no meu |o meu |este |este )?treino|melhorar (?:na |no |na )?prog|carga|progresso|desenvolv(?:er|imento) o treino|subir de n[ií]vel|subir o n[ií]vel|mudar de n[ií]vel|aumentar o n[ií]vel|treino f[áa]cil|treino leve demais|treino muito leve|enjoar|enjoei|cansad[oa] (?:do |desse |deste )?treino|repetitiv|variar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|mudar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|trocar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|rotacionar exerc|diferente treino|novo treino|mudar o treino|mesmo exerc|ta[oã]o repetitiv/.test(lower);
+  const wantsImproveLevel = /melhorar (?:meu |o |o meu |o meu|esse |este |esse |este )?treino|evoluir (?:meu |o |o meu |no |no meu |o meu |este |este )?treino|melhorar (?:na |no |na )?prog|carga|progresso|desenvolv(?:er|imento) o treino|subir de n[ií]vel|subir o n[ií]vel|mudar de n[ií]vel|aumentar o n[ií]vel|treino f[áa]cil|treino leve demais|treino muito leve|enjoar|enjoei|repetitiv|variar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|mudar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|trocar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|rotacionar exerc|diferente treino|novo treino|mudar o treino|mesmo exerc|ta[oã]o repetitiv/.test(lower);
   if (wantsImproveLevel) {
     const wDiff = todayWorkout?.difficulty;
     const diffFromDifficulty = (d: string | undefined): 'iniciante' | 'intermediary' | 'avancado' =>
