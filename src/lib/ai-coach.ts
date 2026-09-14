@@ -139,7 +139,7 @@ export function processAICoachPrompt(
     const curKey = diffFromDifficulty(todayWorkout?.difficulty);
     const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
     const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
-    const prevLabel = prevKey ? DIFF_NAMES[prevKey] : '';
+    const prevLabel = prevKey === 'iniciante' ? 'Iniciante' : prevKey === 'intermediary' ? 'Intermediário' : prevKey === 'avancado' ? 'Avançado' : '';
     const regressActions: AICoachResponse['suggestedActions'] = [
       { action: 'apply_review', label: '📋 Modo leve (cargas -20%)', details: 'Mantém o nível atual e reduz as cargas para aliviar o dia.', workoutId: todayWorkout?.id }
     ];
@@ -184,7 +184,7 @@ export function processAICoachPrompt(
     const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
     const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
     const nextLabel = nextKey ? DIFF_NAMES[nextKey] : '';
-    const prevLabel = prevKey ? DIFF_NAMES[prevKey] : '';
+    const prevLabel = prevKey === 'iniciante' ? 'Iniciante' : prevKey === 'intermediary' ? 'Intermediário' : prevKey === 'avancado' ? 'Avançado' : '';
     const improvements: string[] = [];
     if (nextKey) improvements.push(`📈 **Subir o nível** de **${curLabel}** para **${nextLabel}** (mais séries, cargas maiores e descanso menor)`);
     improvements.push('🔄 **Variar exercícios** — troco os repetitivos por variações do **mesmo grupo muscular**');
