@@ -28,7 +28,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate, suggestSubstituteExercise, sanitizeCoachMessage } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate, suggestSubstituteExercise, sanitizeCoachMessage, workoutLevelKey } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -159,7 +159,7 @@ function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress
       rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
     };
   });
-  const curDiff: Workout['difficulty'] = workout.difficulty || (direction === 'advance' ? 'iniciante' : 'avancado');
+  const curDiff: Workout['difficulty'] = workoutLevelKey(workout);
   const nextDiff: Workout['difficulty'] = direction === 'advance'
     ? (curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado')
     : (curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante');
@@ -1144,9 +1144,9 @@ export function useAppStore() {
       }
 
       case 'advance_experience': {
-        const affected = userWorkouts.filter(w => w.exercises && w.exercises.length > 0);
+        const affected = userWorkouts.filter(w => w.id && w.title);
         if (affected.length === 0) {
-          coachReply('⚠️ Não encontrei exercícios para subir o nível.');
+          coachReply('⚠️ Não encontrei treinos para subir o nível.');
           return;
         }
         const updated = affected.map(w => transformWorkoutLevel(w, 'advance'));
@@ -1163,9 +1163,9 @@ export function useAppStore() {
       }
 
       case 'regress_experience': {
-        const affected = userWorkouts.filter(w => w.exercises && w.exercises.length > 0);
+        const affected = userWorkouts.filter(w => w.id && w.title);
         if (affected.length === 0) {
-          coachReply('⚠️ Não encontrei exercícios para reduzir o nível.');
+          coachReply('⚠️ Não encontrei treinos para reduzir o nível.');
           return;
         }
         const updated = affected.map(w => transformWorkoutLevel(w, 'regress'));
