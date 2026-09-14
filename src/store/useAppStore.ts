@@ -125,22 +125,52 @@ function reconcileWorkoutLevel(w: Workout): Workout {
   return { ...w, title: relabeled.title, notes: relabeled.notes };
 }
 
-function dedupeWorkoutExercises(w: Workout): { workout: Workout; removed: string[] } {
-  if (!w.exercises || w.exercises.length === 0) return { workout: w, removed: [] };
+function dedupeWorkoutExercises(w: Workout): { workout: Workout; replaced: { original: string; exercise: WorkoutExercise }[]; removed: string[] } {
+  if (!w.exercises || w.exercises.length === 0) return { workout: w, replaced: [], removed: [] };
   const seen = new Set<string>();
+  const names = new Set<string>();
+  const replaced: { original: string; exercise: WorkoutExercise }[] = [];
   const removed: string[] = [];
   const exercises: WorkoutExercise[] = [];
+  for (const ex of w.exercises) names.add((ex.name || '').toLowerCase().trim());
   for (const ex of w.exercises) {
     const key = (ex.name || '').toLowerCase().trim();
     if (seen.has(key)) {
+      const sub = suggestSubstituteExercise(ex.muscle_group, [...names], w.id);
+      if (sub) {
+        const subName = sub.name.toLowerCase();
+        names.add(subName);
+        const sets = ex.sets || sub.sets || 3;
+        const replacement: WorkoutExercise = {
+          ...ex,
+          name: sub.name,
+          muscle_group: sub.muscle_group,
+          exercise_type: sub.exercise_type,
+          reps_target: sub.reps_target,
+          default_weight_kg: 0,
+          rest_time_seconds: sub.rest_time_seconds,
+          video_url: sub.video_url,
+          demo_instructions: sub.demo_instructions,
+          sets,
+          sets_data: Array.from({ length: sets }, (_, i) => ({
+            set_number: i + 1,
+            reps_target: sub.reps_target,
+            weight_kg: 0,
+            completed: false
+          }))
+        };
+        exercises.push(replacement);
+        replaced.push({ original: ex.name, exercise: replacement });
+        continue;
+      }
       if (ex.id) removed.push(ex.id);
       continue;
     }
     seen.add(key);
     exercises.push(ex);
   }
-  if (removed.length === 0) return { workout: w, removed };
-  return { workout: { ...w, exercises }, removed };
+  if (replaced.length === 0 && removed.length === 0) return { workout: w, replaced, removed };
+  return { workout: { ...w, exercises }, replaced, removed };
 }
 
 function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: number): ExerciseSet[] {
@@ -505,12 +535,20 @@ export function useAppStore() {
   const refreshFromDB = (data: AllData) => {
     if (!data) return;
     setProfiles(data.profiles);
+    const dedupeNotes: string[] = [];
     setWorkouts(data.workouts.map(w => {
       const reconciled = reconcileWorkoutLevel(w);
       const deduped = dedupeWorkoutExercises(reconciled);
       const workout = { ...deduped.workout, exercises: deduped.workout.exercises?.map(enrichExerciseFromTemplate) };
-      if (reconciled !== w || deduped.removed.length > 0) syncWorkout(workout).catch(() => undefined);
-      if (deduped.removed.length > 0) deduped.removed.forEach(id => deleteWorkoutExercise(id).catch(() => undefined));
+      if (reconciled !== w || deduped.replaced.length > 0 || deduped.removed.length > 0) syncWorkout(workout).catch(() => undefined);
+      for (const r of deduped.replaced) {
+        dedupeNotes.push(`- No **${w.title || `Treino ${data.workouts.indexOf(w) + 1}`}**: troquei **${r.original}** por **${r.exercise.name}**`);
+        syncWorkoutExercise(r.exercise).catch(() => undefined);
+      }
+      if (deduped.removed.length > 0) {
+        dedupeNotes.push(`- No **${w.title || `Treino ${data.workouts.indexOf(w) + 1}`}**: removi ${deduped.removed.length} exercício(s) duplicado(s) (não achei variação disponível)`);
+        deduped.removed.forEach(id => deleteWorkoutExercise(id).catch(() => undefined));
+      }
       return workout;
     }));
     setWorkoutLogs(data.workoutLogs || []);
@@ -522,6 +560,18 @@ export function useAppStore() {
     setPhotos(data.photos);
     setGoals(data.goals);
     setMessages(data.messages);
+    if (dedupeNotes.length > 0) {
+      const aiMsg: AICoachMessage = {
+        id: `msg-dedupe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        profile_id: activeProfile.id,
+        sender: 'ai',
+        message: `🔁 **Ajuste automático na sua ficha!**\n\nEncontrei exercícios repetidos no mesmo treino e já corrijo por você:\n\n${dedupeNotes.join('\n')}\n\nTreinos sempre com exercícios variados te dão mais estímulo. Bora treinar! 💪`,
+        intent_type: 'general',
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...(data.messages || []), aiMsg]);
+      syncMessage(aiMsg);
+    }
   };
 
   // Load data from Supabase on mount
