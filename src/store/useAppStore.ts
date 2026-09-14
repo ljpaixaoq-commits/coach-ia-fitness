@@ -186,7 +186,7 @@ function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: 
   return out;
 }
 
-function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress'): { workout: Workout; removedExercise?: WorkoutExercise } {
+function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress'): { workout: Workout; removedExercise?: WorkoutExercise; addedExercise?: WorkoutExercise } {
   const transformed = (workout.exercises || []).map(e => {
     if (direction === 'advance') {
       const sets = e.exercise_type === 'cardio' ? Math.max(1, e.sets || 1) : Math.min(5, (e.sets || 1) + 1);
@@ -208,15 +208,40 @@ function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress
     };
   });
   let removedExercise: WorkoutExercise | undefined;
-  const exercises = direction === 'regress' && transformed.length > 1
-    ? (removedExercise = transformed[transformed.length - 1], transformed.slice(0, -1))
-    : transformed;
+  let addedExercise: WorkoutExercise | undefined;
   const curDiff: Workout['difficulty'] = workoutLevelKey(workout);
   const nextDiff: Workout['difficulty'] = direction === 'advance'
     ? (curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado')
     : (curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante');
+  let exercises: WorkoutExercise[] = transformed;
+  if (direction === 'regress' && transformed.length > 1) {
+    removedExercise = transformed[transformed.length - 1];
+    exercises = transformed.slice(0, -1);
+  } else if (direction === 'advance' && workout.exercises && workout.exercises.length > 0) {
+    const base = transformed[0] || workout.exercises[0];
+    const sub = suggestSubstituteExercise(base.muscle_group, transformed.map(e => e.name), workout.id);
+    if (sub) {
+      const multiplier = nextDiff === 'iniciante' ? 0.75 : nextDiff === 'avancado' ? 1.25 : 1;
+      const sets = Math.max(1, Math.round((sub.sets || 3) * multiplier));
+      const maxOrder = transformed.reduce((acc, e) => Math.max(acc, e.order_index || 0), 0);
+      addedExercise = {
+        ...sub,
+        sets,
+        sets_data: Array.from({ length: sets }, (_, i) => ({
+          set_number: i + 1,
+          reps_target: sub.reps_target,
+          weight_kg: Math.round((sub.default_weight_kg || 0) * 1.1),
+          completed: false
+        })),
+        default_weight_kg: Math.round((sub.default_weight_kg || 0) * 1.1),
+        order_index: maxOrder + 1,
+        workout_id: workout.id
+      };
+      exercises = [...transformed, addedExercise] as WorkoutExercise[];
+    }
+  }
   const relabeled = relabelWorkoutLevel(workout, nextDiff);
-  return { workout: { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises }, removedExercise };
+  return { workout: { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises }, removedExercise, addedExercise };
 }
 
 export function useAppStore() {
@@ -1233,7 +1258,7 @@ export function useAppStore() {
         await Promise.all(updated.map(w => syncWorkout(w)));
         await Promise.all(editedExercises.map(e => syncWorkoutExercise(e)));
         const countMsg = updated.length === 1 ? '1 treino' : `${updated.length} treinos`;
-        coachReply(`📈 **Nível de ${countMsg} aumentado!**\n\n- Mais séries (+1) em todos os exercícios\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
+        coachReply(`📈 **Nível de ${countMsg} aumentado!**\n\n- **1 exercício incluído** por treino\n- Mais séries (+1) em todos os exercícios\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
         return;
       }
 

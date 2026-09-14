@@ -204,13 +204,13 @@ export function processAICoachPrompt(
     const nextLabel = nextKey ? DIFF_NAMES[nextKey] : '';
     const prevLabel = prevKey === 'iniciante' ? 'Iniciante' : prevKey === 'intermediary' ? 'Intermediário' : prevKey === 'avancado' ? 'Avançado' : '';
     const improvements: string[] = [];
-    if (nextKey) improvements.push(`📈 **Subir o nível** de **${curLabel}** para **${nextLabel}** (mais séries, cargas maiores e descanso menor)`);
+    if (nextKey) improvements.push(`📈 **Subir o nível** de **${curLabel}** para **${nextLabel}** (incluir 1 exercício, mais séries, cargas maiores e descanso menor)`);
     improvements.push('🔄 **Variar exercícios** — troco os repetitivos por variações do **mesmo grupo muscular**');
     improvements.push(prevKey
       ? `📉 **Reduzir a intensidade** — se estiver cansado(a), desço o nível para **${prevLabel}** (menos séries, cargas menores e descanso maior)`
       : `📉 **Reduzir a intensidade** — se estiver cansado(a), aplico o **modo leve** (cargas -20%)`);
     const improveActions: AICoachResponse['suggestedActions'] = [];
-    if (nextKey) improveActions.push({ action: 'advance_experience', label: `📈 Subir para ${nextLabel}`, details: `Aumento a dificuldade do treino: mais séries, cargas maiores e descanso menor.` });
+    if (nextKey) improveActions.push({ action: 'advance_experience', label: `📈 Subir para ${nextLabel}`, details: `Aumento a dificuldade do treino: incluo 1 exercício, mais séries, cargas maiores e descanso menor.` });
     improveActions.push({ action: 'rotate_exercises', label: '🔄 Variar exercícios', details: 'Troco exercícios repetitivos por variações do mesmo grupo muscular, mantendo o grupo trabalhado.' });
     improveActions.push({ action: 'regress_experience', label: prevKey ? `📉 Descer para ${prevLabel}` : '📉 Modo leve', details: 'Alivia o treino: dificuldade menor, cargas menores e descanso maior.' });
     return {
