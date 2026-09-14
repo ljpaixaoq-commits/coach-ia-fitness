@@ -15,7 +15,8 @@ import {
   AICoachMessage,
   AIDailySummary,
   SuggestedAction,
-  CoachHistoryResult
+  CoachHistoryResult,
+  ExerciseSet
 } from '../types';
 import {
   INITIAL_PROFILES,
@@ -98,6 +99,31 @@ export function computeTotalVolume(exercises: WorkoutExercise[]): number {
     }
   }
   return Math.round(total * 10) / 10;
+}
+
+const DIFF_LABELS: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
+
+function relabelWorkoutLevel(workout: Workout, curKey: string, nextKey: string): Pick<Workout, 'title' | 'notes'> {
+  const cur = DIFF_LABELS[curKey];
+  const next = DIFF_LABELS[nextKey];
+  if (!cur || !next) return { title: workout.title, notes: workout.notes };
+  return {
+    title: (workout.title || '').replace(new RegExp(`\\s*-\\s*${cur}\\s*$`), ` - ${next}`),
+    notes: (workout.notes || '').replace(`**Nível:** ${cur}`, `**Nível:** ${next}`)
+  };
+}
+
+function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: number): ExerciseSet[] {
+  const out: ExerciseSet[] = (data || []).filter(s => s.set_number <= count);
+  if (out.length === 0) {
+    for (let i = 1; i <= count; i++) out.push({ set_number: i, reps_target: '', weight_kg: defaultWeight || 0, completed: false });
+    return out;
+  }
+  while (out.length < count) {
+    const last = out[out.length - 1];
+    out.push({ set_number: out.length + 1, reps_target: last.reps_target, weight_kg: last.weight_kg, completed: false });
+  }
+  return out;
 }
 
 export function useAppStore() {
@@ -1081,18 +1107,24 @@ export function useAppStore() {
           return;
         }
         const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
-        const curDiff = workout.difficulty || 'iniciante';
-        const nextDiff = curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado';
-        const updated = workout.exercises.map(e => ({
-          ...e,
-          default_weight_kg: Math.round((e.default_weight_kg || 0) * 1.1),
-          rest_time_seconds: Math.max(45, Math.min(150, Math.round((e.rest_time_seconds || 60) * 0.85))),
-          sets_data: (e.sets_data || []).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
-        }));
-        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, difficulty: nextDiff, exercises: updated } : w));
-        await syncWorkout({ ...workout, difficulty: nextDiff, exercises: updated });
+        const curDiff: Workout['difficulty'] = workout.difficulty || 'iniciante';
+        const nextDiff: Workout['difficulty'] = curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado';
+        const updated = workout.exercises.map(e => {
+          const sets = e.exercise_type === 'cardio' ? Math.max(1, e.sets || 1) : Math.min(5, (e.sets || 1) + 1);
+          return {
+            ...e,
+            sets,
+            default_weight_kg: Math.round((e.default_weight_kg || 0) * 1.1),
+            rest_time_seconds: Math.max(45, Math.min(150, Math.round((e.rest_time_seconds || 60) * 0.85))),
+            sets_data: padSets(e.sets_data, sets, e.default_weight_kg || 0).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
+          };
+        });
+        const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
+        const persisted: Workout = { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises: updated };
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? persisted : w));
+        await syncWorkout(persisted);
         await Promise.all(updated.map(e => syncWorkoutExercise(e)));
-        coachReply(`📈 **Nível do treino aumentado!**\n\n- **${diffLabels[curDiff] || 'Iniciante'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
+        coachReply(`📈 **Nível do treino aumentado!**\n\n- **${diffLabels[curDiff] || 'Iniciante'}** ➜ **${diffLabels[nextDiff]}**\n- Mais séries (+1)\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
         return;
       }
 
@@ -1103,20 +1135,22 @@ export function useAppStore() {
           return;
         }
         const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
-        const curDiff = workout.difficulty || 'avancado';
-        const nextDiff = curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante';
+        const curDiff: Workout['difficulty'] = workout.difficulty || 'avancado';
+        const nextDiff: Workout['difficulty'] = curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante';
         const updated = workout.exercises.map(e => {
           const sets = Math.max(1, (e.sets || 1) >= 3 ? (e.sets || 1) - 1 : (e.sets || 1));
           return {
             ...e,
             sets,
-            sets_data: (e.sets_data || []).filter(s => s.set_number <= sets),
+            sets_data: (e.sets_data || []).filter(s => s.set_number <= sets).map(s => ({ ...s, weight_kg: Math.max(0, Math.round((s.weight_kg || 0) * 0.9)) })),
             default_weight_kg: Math.max(0, Math.round((e.default_weight_kg || 0) * 0.9)),
             rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
           };
         });
-        setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, difficulty: nextDiff, exercises: updated } : w));
-        await syncWorkout({ ...workout, difficulty: nextDiff, exercises: updated });
+        const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
+        const persisted: Workout = { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises: updated };
+        setWorkouts(prev => prev.map(w => w.id === workout.id ? persisted : w));
+        await syncWorkout(persisted);
         await Promise.all(updated.map(e => syncWorkoutExercise(e)));
         coachReply(`📉 **Nível do treino reduzido!**\n\n- **${diffLabels[curDiff] || 'Avançado'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **-10%**\n- Descanso aumentado\n- Volume (séries) reduzido\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
         return;
