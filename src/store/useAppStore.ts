@@ -126,6 +126,35 @@ function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: 
   return out;
 }
 
+function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress'): Workout {
+  const exercises = (workout.exercises || []).map(e => {
+    if (direction === 'advance') {
+      const sets = e.exercise_type === 'cardio' ? Math.max(1, e.sets || 1) : Math.min(5, (e.sets || 1) + 1);
+      return {
+        ...e,
+        sets,
+        default_weight_kg: Math.round((e.default_weight_kg || 0) * 1.1),
+        rest_time_seconds: Math.max(45, Math.min(150, Math.round((e.rest_time_seconds || 60) * 0.85))),
+        sets_data: padSets(e.sets_data, sets, e.default_weight_kg || 0).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
+      };
+    }
+    const sets = Math.max(1, (e.sets || 1) >= 3 ? (e.sets || 1) - 1 : (e.sets || 1));
+    return {
+      ...e,
+      sets,
+      sets_data: (e.sets_data || []).filter(s => s.set_number <= sets).map(s => ({ ...s, weight_kg: Math.max(0, Math.round((s.weight_kg || 0) * 0.9)) })),
+      default_weight_kg: Math.max(0, Math.round((e.default_weight_kg || 0) * 0.9)),
+      rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
+    };
+  });
+  const curDiff: Workout['difficulty'] = workout.difficulty || (direction === 'advance' ? 'iniciante' : 'avancado');
+  const nextDiff: Workout['difficulty'] = direction === 'advance'
+    ? (curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado')
+    : (curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante');
+  const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
+  return { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises };
+}
+
 export function useAppStore() {
   // Supabase sync status
   const [dbConnected, setDbConnected] = useState<boolean>(() => isSupabaseConfigured());
@@ -1101,58 +1130,40 @@ export function useAppStore() {
       }
 
       case 'advance_experience': {
-        const workout = targetWorkout;
-        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+        const affected = userWorkouts.filter(w => w.exercises && w.exercises.length > 0);
+        if (affected.length === 0) {
           coachReply('⚠️ Não encontrei exercícios para subir o nível.');
           return;
         }
-        const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
-        const curDiff: Workout['difficulty'] = workout.difficulty || 'iniciante';
-        const nextDiff: Workout['difficulty'] = curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado';
-        const updated = workout.exercises.map(e => {
-          const sets = e.exercise_type === 'cardio' ? Math.max(1, e.sets || 1) : Math.min(5, (e.sets || 1) + 1);
-          return {
-            ...e,
-            sets,
-            default_weight_kg: Math.round((e.default_weight_kg || 0) * 1.1),
-            rest_time_seconds: Math.max(45, Math.min(150, Math.round((e.rest_time_seconds || 60) * 0.85))),
-            sets_data: padSets(e.sets_data, sets, e.default_weight_kg || 0).map(s => ({ ...s, weight_kg: Math.round((s.weight_kg || 0) * 1.1) }))
-          };
-        });
-        const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
-        const persisted: Workout = { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises: updated };
-        setWorkouts(prev => prev.map(w => w.id === workout.id ? persisted : w));
-        await syncWorkout(persisted);
-        await Promise.all(updated.map(e => syncWorkoutExercise(e)));
-        coachReply(`📈 **Nível do treino aumentado!**\n\n- **${diffLabels[curDiff] || 'Iniciante'}** ➜ **${diffLabels[nextDiff]}**\n- Mais séries (+1)\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
+        const updated = affected.map(w => transformWorkoutLevel(w, 'advance'));
+        const editedExercises = updated.flatMap(w => w.exercises || []);
+        setWorkouts(prev => prev.map(w => {
+          const next = updated.find(u => u.id === w.id);
+          return next || w;
+        }));
+        await Promise.all(updated.map(w => syncWorkout(w)));
+        await Promise.all(editedExercises.map(e => syncWorkoutExercise(e)));
+        const countMsg = updated.length === 1 ? '1 treino' : `${updated.length} treinos`;
+        coachReply(`📈 **Nível de ${countMsg} aumentado!**\n\n- Mais séries (+1) em todos os exercícios\n- Cargas **+10%**\n- Descanso reduzido\n\nBora evoluir! 💪`);
         return;
       }
 
       case 'regress_experience': {
-        const workout = targetWorkout;
-        if (!workout || !workout.exercises || workout.exercises.length === 0) {
+        const affected = userWorkouts.filter(w => w.exercises && w.exercises.length > 0);
+        if (affected.length === 0) {
           coachReply('⚠️ Não encontrei exercícios para reduzir o nível.');
           return;
         }
-        const diffLabels: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
-        const curDiff: Workout['difficulty'] = workout.difficulty || 'avancado';
-        const nextDiff: Workout['difficulty'] = curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante';
-        const updated = workout.exercises.map(e => {
-          const sets = Math.max(1, (e.sets || 1) >= 3 ? (e.sets || 1) - 1 : (e.sets || 1));
-          return {
-            ...e,
-            sets,
-            sets_data: (e.sets_data || []).filter(s => s.set_number <= sets).map(s => ({ ...s, weight_kg: Math.max(0, Math.round((s.weight_kg || 0) * 0.9)) })),
-            default_weight_kg: Math.max(0, Math.round((e.default_weight_kg || 0) * 0.9)),
-            rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
-          };
-        });
-        const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
-        const persisted: Workout = { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises: updated };
-        setWorkouts(prev => prev.map(w => w.id === workout.id ? persisted : w));
-        await syncWorkout(persisted);
-        await Promise.all(updated.map(e => syncWorkoutExercise(e)));
-        coachReply(`📉 **Nível do treino reduzido!**\n\n- **${diffLabels[curDiff] || 'Avançado'}** ➜ **${diffLabels[nextDiff]}**\n- Cargas **-10%**\n- Descanso aumentado\n- Volume (séries) reduzido\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
+        const updated = affected.map(w => transformWorkoutLevel(w, 'regress'));
+        const editedExercises = updated.flatMap(w => w.exercises || []);
+        setWorkouts(prev => prev.map(w => {
+          const next = updated.find(u => u.id === w.id);
+          return next || w;
+        }));
+        await Promise.all(updated.map(w => syncWorkout(w)));
+        await Promise.all(editedExercises.map(e => syncWorkoutExercise(e)));
+        const countMsg = updated.length === 1 ? '1 treino' : `${updated.length} treinos`;
+        coachReply(`📉 **Nível de ${countMsg} reduzido!**\n\n- Menos séries (-1) em todos os exercícios\n- Cargas **-10%**\n- Descanso aumentado\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
         return;
       }
 
