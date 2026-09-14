@@ -19,6 +19,16 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
   };
 }
 
+export function workoutLevelKey(workout: Workout | undefined): 'iniciante' | 'intermediary' | 'avancado' {
+  const d = workout?.difficulty;
+  if (d === 'iniciante' || d === 'intermediary' || d === 'avancado') return d;
+  const t = (workout?.title || '').toLowerCase().trim();
+  if (/\b(avan[cç]ado|advanced)\s*$/.test(t)) return 'avancado';
+  if (/\b(intermedi[aá]rio|intermediate)\s*$/.test(t)) return 'intermediary';
+  if (/\biniciante\s*$/.test(t)) return 'iniciante';
+  return 'intermediary';
+}
+
 export function sanitizeCoachMessage(m: AICoachMessage): AICoachMessage {
   const message = (m.message || '')
     .replace('desço o nível para **undefined**', 'reduzo a intensidade do treino')
@@ -147,9 +157,7 @@ export function processAICoachPrompt(
   // ── Melhorar treino: regressão (aliviar nível/intensidade) ──
   const wantsRegress = /descer de n[ií]vel|baixar (?:o |meu )?n[ií]vel|abaixar o n[ií]vel|reduzir o n[ií]vel|diminuir o n[ií]vel|reduzir (?:as |as minhas )?cargas|diminuir as cargas|baixar as cargas|abaixar as cargas|baixar a intensidade|abaixar a intensidade|reduzir a intensidade|diminuir a intensidade|menos intensidade|aliviar (?:o |meu |o meu )?treino|treino (?:mais |bem mais )?leve|(?:cansad[oa]|exausto|exausta|fatigad[oa]|esgotad[oa]|derrubad[oa])(?: do | da | desse | deste | do meu | da minha | com o | com o meu | com esse | com esta | com essa | com esse meu )?(?:treino|ficha)|treino (?:[ée] |est[áa] |esta |ficou |fica |t[aá] )?(?:muito |bem |demais |bastante |tao |t[aã]o )?(?:pesado|puxado|dif[ií]cil|intenso|forte)|muito (?:pesado|puxado|dif[ií]cil|intenso|forte)(?: pra | para | pro | para o | para mim )?(?:o |esse |este |meu |o meu )?(?:treino|treinar)|n[ãa]o (?:aguento|suporto) (?:mais )?(?:o |esse |este |meu )?treino|dar um passo atr[áa]s|regredir|regress|voltar (?:para |pro |para o |ao |ao n[ií]vel |para o n[ií]vel )(?:intermedi|iniciante|inic)/.test(lower);
   if (wantsRegress) {
-    const diffFromDifficulty = (d: string | undefined): 'iniciante' | 'intermediary' | 'avancado' =>
-      d === 'iniciante' ? 'iniciante' : d === 'intermediary' ? 'intermediary' : 'avancado';
-    const curKey = diffFromDifficulty(todayWorkout?.difficulty);
+    const curKey = workoutLevelKey(todayWorkout);
     const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
     const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
     const prevLabel = prevKey === 'iniciante' ? 'Iniciante' : prevKey === 'intermediary' ? 'Intermediário' : prevKey === 'avancado' ? 'Avançado' : '';
@@ -189,10 +197,7 @@ export function processAICoachPrompt(
   // ── Melhorar o treino (evoluir nível / variar / reduzir intensidade) ───
   const wantsImproveLevel = /melhorar (?:meu |o |o meu |o meu|esse |este |esse |este )?treino|evoluir (?:meu |o |o meu |no |no meu |o meu |este |este )?treino|melhorar (?:na |no |na )?prog|carga|progresso|desenvolv(?:er|imento) o treino|subir de n[ií]vel|subir o n[ií]vel|mudar de n[ií]vel|aumentar o n[ií]vel|treino f[áa]cil|treino leve demais|treino muito leve|enjoar|enjoei|repetitiv|variar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|mudar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|trocar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|rotacionar exerc|diferente treino|novo treino|mudar o treino|mesmo exerc|ta[oã]o repetitiv/.test(lower);
   if (wantsImproveLevel) {
-    const wDiff = todayWorkout?.difficulty;
-    const diffFromDifficulty = (d: string | undefined): 'iniciante' | 'intermediary' | 'avancado' =>
-      d === 'iniciante' ? 'iniciante' : d === 'intermediary' ? 'intermediary' : 'avancado';
-    const curKey = diffFromDifficulty(wDiff);
+    const curKey = workoutLevelKey(todayWorkout);
     const nextKey = curKey === 'iniciante' ? 'intermediate' : curKey === 'intermediary' ? 'advanced' : null;
     const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
     const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';

@@ -103,14 +103,26 @@ export function computeTotalVolume(exercises: WorkoutExercise[]): number {
 
 const DIFF_LABELS: Record<string, string> = { iniciante: 'Iniciante', intermediary: 'Intermediário', avancado: 'Avançado' };
 
-function relabelWorkoutLevel(workout: Workout, curKey: string, nextKey: string): Pick<Workout, 'title' | 'notes'> {
-  const cur = DIFF_LABELS[curKey];
+function relabelWorkoutLevel(workout: Workout, nextKey: string): Pick<Workout, 'title' | 'notes'> {
   const next = DIFF_LABELS[nextKey];
-  if (!cur || !next) return { title: workout.title, notes: workout.notes };
+  if (!next) return { title: workout.title, notes: workout.notes };
+  const cleaned = (workout.title || '').replace(/\s*[-–—]\s*(?:iniciante|intermedi[aá]rio|avan[cç]ado)\s*$/i, '').trim();
   return {
-    title: (workout.title || '').replace(new RegExp(`\\s*-\\s*${cur}\\s*$`), ` - ${next}`),
-    notes: (workout.notes || '').replace(`**Nível:** ${cur}`, `**Nível:** ${next}`)
+    title: cleaned ? `${cleaned} - ${next}` : workout.title,
+    notes: (workout.notes || '').replace(/\*\*N[ií]vel:\*\*[^\n]*/, `**Nível:** ${next}`)
   };
+}
+
+function reconcileWorkoutLevel(w: Workout): Workout {
+  const label = DIFF_LABELS[w.difficulty];
+  if (!label || !w.title) return w;
+  const m = w.title.match(/\s*[-–—]\s*(iniciante|intermedi[aá]rio|avan[cç]ado)\s*$/i);
+  if (!m) return w;
+  const existing = m[1].toLowerCase();
+  const desired = label.toLowerCase();
+  if (existing === desired) return w;
+  const relabeled = relabelWorkoutLevel(w, w.difficulty);
+  return { ...w, title: relabeled.title, notes: relabeled.notes };
 }
 
 function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: number): ExerciseSet[] {
@@ -151,7 +163,7 @@ function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress
   const nextDiff: Workout['difficulty'] = direction === 'advance'
     ? (curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado')
     : (curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante');
-  const relabeled = relabelWorkoutLevel(workout, curDiff, nextDiff);
+  const relabeled = relabelWorkoutLevel(workout, nextDiff);
   return { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises };
 }
 
@@ -337,7 +349,7 @@ export function useAppStore() {
   // Workouts
   const [workouts, setWorkouts] = useState<Workout[]>(() => {
     const saved = localStorage.getItem('coach_workouts');
-    return saved ? JSON.parse(saved) : INITIAL_WORKOUTS;
+    return (saved ? JSON.parse(saved) : INITIAL_WORKOUTS).map(reconcileWorkoutLevel);
   });
 
   // Active workout tracking & Rest timer
@@ -475,10 +487,12 @@ export function useAppStore() {
   const refreshFromDB = (data: AllData) => {
     if (!data) return;
     setProfiles(data.profiles);
-    setWorkouts(data.workouts.map(w => ({
-      ...w,
-      exercises: w.exercises?.map(enrichExerciseFromTemplate)
-    })));
+    setWorkouts(data.workouts.map(w => {
+      const reconciled = reconcileWorkoutLevel(w);
+      const workout = { ...reconciled, exercises: reconciled.exercises?.map(enrichExerciseFromTemplate) };
+      if (reconciled !== w) syncWorkout(workout).catch(() => undefined);
+      return workout;
+    }));
     setWorkoutLogs(data.workoutLogs || []);
     setMeals(data.meals);
     setWaterLogs(data.waterLogs);
