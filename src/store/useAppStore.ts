@@ -186,8 +186,8 @@ function padSets(data: ExerciseSet[] | undefined, count: number, defaultWeight: 
   return out;
 }
 
-function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress'): Workout {
-  const exercises = (workout.exercises || []).map(e => {
+function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress'): { workout: Workout; removedExercise?: WorkoutExercise } {
+  const transformed = (workout.exercises || []).map(e => {
     if (direction === 'advance') {
       const sets = e.exercise_type === 'cardio' ? Math.max(1, e.sets || 1) : Math.min(5, (e.sets || 1) + 1);
       return {
@@ -207,12 +207,16 @@ function transformWorkoutLevel(workout: Workout, direction: 'advance' | 'regress
       rest_time_seconds: Math.min(180, Math.round((e.rest_time_seconds || 60) * 1.15))
     };
   });
+  let removedExercise: WorkoutExercise | undefined;
+  const exercises = direction === 'regress' && transformed.length > 1
+    ? (removedExercise = transformed[transformed.length - 1], transformed.slice(0, -1))
+    : transformed;
   const curDiff: Workout['difficulty'] = workoutLevelKey(workout);
   const nextDiff: Workout['difficulty'] = direction === 'advance'
     ? (curDiff === 'iniciante' ? 'intermediary' : curDiff === 'intermediary' ? 'avancado' : 'avancado')
     : (curDiff === 'avancado' ? 'intermediary' : curDiff === 'intermediary' ? 'iniciante' : 'iniciante');
   const relabeled = relabelWorkoutLevel(workout, nextDiff);
-  return { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises };
+  return { workout: { ...workout, difficulty: nextDiff, title: relabeled.title, notes: relabeled.notes, exercises }, removedExercise };
 }
 
 export function useAppStore() {
@@ -1219,7 +1223,8 @@ export function useAppStore() {
           coachReply('⚠️ Não encontrei treinos para subir o nível.');
           return;
         }
-        const updated = affected.map(w => transformWorkoutLevel(w, 'advance'));
+        const results = affected.map(w => transformWorkoutLevel(w, 'advance'));
+        const updated = results.map(r => r.workout);
         const editedExercises = updated.flatMap(w => w.exercises || []);
         setWorkouts(prev => prev.map(w => {
           const next = updated.find(u => u.id === w.id);
@@ -1238,7 +1243,9 @@ export function useAppStore() {
           coachReply('⚠️ Não encontrei treinos para reduzir o nível.');
           return;
         }
-        const updated = affected.map(w => transformWorkoutLevel(w, 'regress'));
+        const results = affected.map(w => transformWorkoutLevel(w, 'regress'));
+        const updated = results.map(r => r.workout);
+        const removedExercises = results.flatMap(r => (r.removedExercise ? [r.removedExercise] : []));
         const editedExercises = updated.flatMap(w => w.exercises || []);
         setWorkouts(prev => prev.map(w => {
           const next = updated.find(u => u.id === w.id);
@@ -1246,8 +1253,11 @@ export function useAppStore() {
         }));
         await Promise.all(updated.map(w => syncWorkout(w)));
         await Promise.all(editedExercises.map(e => syncWorkoutExercise(e)));
+        if (removedExercises.length > 0) {
+          await Promise.all(removedExercises.map(e => (e.id ? deleteWorkoutExercise(e.id) : Promise.resolve())));
+        }
         const countMsg = updated.length === 1 ? '1 treino' : `${updated.length} treinos`;
-        coachReply(`📉 **Nível de ${countMsg} reduzido!**\n\n- Menos séries (-1) em todos os exercícios\n- Cargas **-10%**\n- Descanso aumentado\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
+        coachReply(`📉 **Nível de ${countMsg} reduzido!**\n\n- **1 exercício removido** por treino\n- Menos séries (-1) nos exercícios restantes\n- Cargas **-10%**\n- Descanso aumentado\n\nRespeite o seu momento — a intensidade volta aos poucos quando você estiver pronto(a). 💪`);
         return;
       }
 

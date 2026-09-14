@@ -165,11 +165,11 @@ export function processAICoachPrompt(
       { action: 'apply_review', label: '📋 Modo leve (cargas -20%)', details: 'Mantém o nível atual e reduz as cargas para aliviar o dia.', workoutId: todayWorkout?.id }
     ];
     if (prevKey) {
-      regressActions.unshift({ action: 'regress_experience', label: `📉 Descer para ${prevLabel}`, details: 'Reduz a dificuldade do treino: menos séries, cargas menores e descanso maior.' });
+      regressActions.unshift({ action: 'regress_experience', label: `📉 Descer para ${prevLabel}`, details: 'Reduz a dificuldade do treino: remove 1 exercício, menos séries, cargas menores e descanso maior.' });
     }
     regressActions.push({ action: 'rotate_exercises', label: '🔄 Variar exercícios', details: 'Troco exercícios repetitivos por variações do mesmo grupo muscular.' });
     const plan = prevKey
-      ? `📉 **Descer o nível** de **${curLabel}** para **${prevLabel}** (menos séries, cargas **-10%** e descanso maior)`
+      ? `📉 **Descer o nível** de **${curLabel}** para **${prevLabel}** (remover 1 exercício, menos séries, cargas **-10%** e descanso maior)`
       : `📋 Você já está no nível **${curLabel}** — o menor disponível. Aplico o **modo leve:** cargas **-20%** e descanso maior`;
     return {
       intent: 'workout_regress',
