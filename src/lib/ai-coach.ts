@@ -1,4 +1,4 @@
-import { Profile, Workout, WorkoutExercise, InjuryPainLog, HealthMetric, AIDailySummary } from '../types';
+import { Profile, Workout, WorkoutExercise, InjuryPainLog, HealthMetric, AIDailySummary, AICoachMessage } from '../types';
 
 export function getDynamicGreeting(name: string): { greeting: string; period: string } {
   const hour = new Date().getHours();
@@ -17,6 +17,19 @@ export function getDynamicGreeting(name: string): { greeting: string; period: st
     greeting: `${prefix}, ${name}!`,
     period
   };
+}
+
+export function sanitizeCoachMessage(m: AICoachMessage): AICoachMessage {
+  const message = (m.message || '')
+    .replace('desço o nível para **undefined**', 'reduzo a intensidade do treino')
+    .replace(/ para \*\*undefined\*\*/g, ' para o nível anterior')
+    .replace(/\s*\*\*undefined\*\*/g, '');
+  const suggested_actions = (m.suggested_actions || []).map(a => ({
+    ...a,
+    label: (a.label || '').replace('Descer para undefined', 'Descer de nível').replace(/\bundefined\b/gi, 'o nível anterior')
+  }));
+  if (m.message === message && m.suggested_actions === suggested_actions) return m;
+  return { ...m, message, suggested_actions };
 }
 
 export interface AICoachResponse {

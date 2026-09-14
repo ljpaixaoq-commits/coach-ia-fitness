@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { hashPassword, verifyPassword, onlyDigits, isValidCPF } from './auth';
 import { compressImageFile } from './image';
+import { sanitizeCoachMessage } from './ai-coach';
 import {
   Profile,
   Workout,
@@ -279,7 +280,7 @@ function mapGoal(g: any): Goal {
 }
 
 function mapMessage(m: any): AICoachMessage {
-  return {
+  return sanitizeCoachMessage({
     id: m.id,
     profile_id: m.perfil_id,
     sender: m.remetente,
@@ -287,7 +288,7 @@ function mapMessage(m: any): AICoachMessage {
     intent_type: m.tipo_intencao,
     suggested_actions: m.acoes_sugeridas,
     created_at: m.criado_em
-  };
+  });
 }
 
 const ADJUST_INTENTS: NonNullable<AICoachMessage['intent_type']>[] = [

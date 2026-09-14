@@ -27,7 +27,7 @@ import {
   INITIAL_HEALTH_METRICS,
   INITIAL_PHOTOS
 } from '../lib/storage';
-import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate, suggestSubstituteExercise } from '../lib/ai-coach';
+import { generateSmartDailySummary, processAICoachPrompt, generateWorkout, generateVariation, WorkoutGoal, enrichExerciseFromTemplate, suggestSubstituteExercise, sanitizeCoachMessage } from '../lib/ai-coach';
 import {
   loadAllData,
   seedInitialData,
@@ -347,7 +347,7 @@ export function useAppStore() {
   const [messages, setMessages] = useState<AICoachMessage[]>(() => {
     const saved = localStorage.getItem('coach_ai_messages');
     return saved
-      ? JSON.parse(saved)
+      ? JSON.parse(saved).map(sanitizeCoachMessage)
       : [
           {
             id: 'msg-welcome',
