@@ -173,7 +173,7 @@ export function processAICoachPrompt(
     };
   }
 
-  // ── Melhorar o treino (evoluir nível / variar exercícios) ───
+  // ── Melhorar o treino (evoluir nível / variar / reduzir intensidade) ───
   const wantsImproveLevel = /melhorar (?:meu |o |o meu |o meu|esse |este |esse |este )?treino|evoluir (?:meu |o |o meu |no |no meu |o meu |este |este )?treino|melhorar (?:na |no |na )?prog|carga|progresso|desenvolv(?:er|imento) o treino|subir de n[ií]vel|subir o n[ií]vel|mudar de n[ií]vel|aumentar o n[ií]vel|treino f[áa]cil|treino leve demais|treino muito leve|enjoar|enjoei|repetitiv|variar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|mudar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|trocar (?:os |o |meus |o meu |meu |os meus )?exerc[ií]cio|rotacionar exerc|diferente treino|novo treino|mudar o treino|mesmo exerc|ta[oã]o repetitiv/.test(lower);
   if (wantsImproveLevel) {
     const wDiff = todayWorkout?.difficulty;
@@ -181,14 +181,20 @@ export function processAICoachPrompt(
       d === 'iniciante' ? 'iniciante' : d === 'intermediary' ? 'intermediary' : 'avancado';
     const curKey = diffFromDifficulty(wDiff);
     const nextKey = curKey === 'iniciante' ? 'intermediate' : curKey === 'intermediary' ? 'advanced' : null;
+    const prevKey = curKey === 'avancado' ? 'intermediary' : curKey === 'intermediary' ? 'iniciante' : null;
     const curLabel = curKey === 'iniciante' ? 'Iniciante' : curKey === 'intermediary' ? 'Intermediário' : 'Avançado';
     const nextLabel = nextKey ? DIFF_NAMES[nextKey] : '';
+    const prevLabel = prevKey ? DIFF_NAMES[prevKey] : '';
     const improvements: string[] = [];
     if (nextKey) improvements.push(`📈 **Subir o nível** de **${curLabel}** para **${nextLabel}** (mais séries, cargas maiores e descanso menor)`);
     improvements.push('🔄 **Variar exercícios** — troco os repetitivos por variações do **mesmo grupo muscular**');
+    improvements.push(prevKey
+      ? `📉 **Reduzir a intensidade** — se estiver cansado(a), desço o nível para **${prevLabel}** (menos séries, cargas menores e descanso maior)`
+      : `📉 **Reduzir a intensidade** — se estiver cansado(a), aplico o **modo leve** (cargas -20%)`);
     const improveActions: AICoachResponse['suggestedActions'] = [];
     if (nextKey) improveActions.push({ action: 'advance_experience', label: `📈 Subir para ${nextLabel}`, details: `Aumento a dificuldade do treino: mais séries, cargas maiores e descanso menor.` });
     improveActions.push({ action: 'rotate_exercises', label: '🔄 Variar exercícios', details: 'Troco exercícios repetitivos por variações do mesmo grupo muscular, mantendo o grupo trabalhado.' });
+    improveActions.push({ action: 'regress_experience', label: prevKey ? `📉 Descer para ${prevLabel}` : '📉 Modo leve', details: 'Alivia o treino: dificuldade menor, cargas menores e descanso maior.' });
     return {
       intent: 'workout_improve',
       message: `${greeting} Antes de mexer no seu treino, aqui está **em resumo** o que pretendo ajustar:\n\n${improvements.join('\n')}\n\n**Nada é aplicado sem a sua confirmação.** Quer que eu **aplique**? 💪`,
